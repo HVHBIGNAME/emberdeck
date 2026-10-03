@@ -10,13 +10,19 @@ use std::{
     time::Duration,
 };
 
-pub const USER_AGENT: &str = "Emberdeck/0.1.0 (https://github.com/HVHBIGNAME/emberdeck)";
+pub const USER_AGENT: &str = concat!(
+    "Emberdeck/",
+    env!("CARGO_PKG_VERSION"),
+    " (https://github.com/HVHBIGNAME/emberdeck)"
+);
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub listen: String,
     pub public_url: String,
+    pub access_mode: crate::access::Mode,
+    pub public_url_file: Option<PathBuf>,
     pub data_dir: PathBuf,
     pub server_dir: PathBuf,
     pub backup_dir: PathBuf,
@@ -41,6 +47,8 @@ impl Default for Config {
         Self {
             listen: "127.0.0.1:8080".into(),
             public_url: "http://localhost:8080".into(),
+            access_mode: crate::access::Mode::Local,
+            public_url_file: None,
             data_dir: ".emberdeck/panel".into(),
             server_dir: ".emberdeck/servers".into(),
             backup_dir: ".emberdeck/backups".into(),
@@ -63,6 +71,14 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn effective_public_url(&self) -> Result<String> {
+        Ok(crate::access::public_url(self)?.unwrap_or_else(|| self.public_url.clone()))
+    }
+
+    pub fn secure_cookies(&self) -> bool {
+        self.access_mode != crate::access::Mode::Local || self.public_url.starts_with("https://")
+    }
+
     pub fn load(path: &Path) -> Result<Self> {
         let mut config: Self =
             toml::from_str(&fs::read_to_string(path)?).map_err(anyhow::Error::from)?;

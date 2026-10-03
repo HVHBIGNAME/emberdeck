@@ -1,21 +1,35 @@
-# v0.1 verification
+# v0.2 verification
 
-Verification date: **2026-10-02**. These results describe the tested paths, rather than a production-hardening certification.
+Verification date: **2026-10-03**. These results describe the tested paths, rather than a production-hardening certification. The game-operation baseline below was established on v0.1 on 2026-10-02; v0.2 adds the access and upgrade checks.
 
 ## Automated checks
 
 | Check | Result |
 | --- | --- |
-| Windows Rust tests | 22 passed |
-| Linux x86-64 musl release tests | 23 passed, including capability-root symlink isolation |
+| Windows Rust tests | 26 passed |
+| Linux x86-64 musl release tests | 27 passed, including capability-root symlink isolation |
 | Rust Clippy, all targets, warnings denied | Passed locally |
 | TypeScript and Vite production build | Passed |
-| Chromium end-to-end tests | 8 passed |
-| Bash installer syntax | Passed |
+| Chromium end-to-end tests against the production bundle | 12 passed |
+| Bootstrap and embedded access installer Bash syntax | Passed |
 
-Browser coverage includes navigation, mobile layout, keyboard search and chart inspection, EULA consent, read-only demonstration controls, and preserving the file editor after a successful save and workspace refresh. The successful-save regression uses intercepted API responses; the separate Linux checks below use a real running node.
+Browser coverage includes navigation, mobile layout, keyboard search and chart inspection, EULA consent, read-only demonstration controls, preserving the file editor after a successful save, installation profiles before login, command copying/quoting, port and URL validation, and readable non-JSON gateway errors. Fixture and error-path tests use intercepted API responses; the Linux checks below use the real native panel.
 
-## Real Linux node
+## HTTPS access and upgrades
+
+- Installed the native v0.2 binary over the existing systemd deployment. Existing owner/node credentials and listener ports were preserved. An upgrade without an access flag kept the same running tunnel process and public URL.
+- Provisioned a real outbound quick tunnel using checksum-verified cloudflared 2026.9.3. The public HTTPS `/healthz` response matched the local installation identifier.
+- Used Chromium through that public URL: pre-login wizard, owner login, HttpOnly/Secure/SameSite=Strict session cookie, same-origin console command, admin deployment information and mobile layout. Missing/foreign Origin mutations and a viewer's deployment request were rejected. Temporary test credentials and sessions were removed.
+- Switched from quick HTTPS to private loopback access and back. The private profile stopped and disabled the tunnel; local health remained available.
+- Forced a readiness-probe failure during setup and verified exact configuration rollback, including preserving a previously disabled/stopped tunnel's service state.
+- Simulated replacement readiness depending on the retiring tunnel. Setup rejected that dependency and restored the previously active/enabled tunnel.
+- Deliberately reached systemd's real `start-limit-hit`, then verified that explicit access setup reset the counter once and restored a working panel.
+- Restarted only the tunnel, observed a different working HTTPS URL, and verified that the panel process did not restart. The owner/node credentials, Minecraft container and unrelated host containers were unchanged.
+- Verified that managed Caddy rejects occupied ports 80/443 before changing panel configuration. A live public certificate was not requested on the shared test host.
+
+The integration run caught incompatible cloudflared flags; startup now uses the pinned binary's supported options and performs a command-line preflight. URL validation rejects control characters, configuration edits preserve unrelated TOML values/comments, and rollback retains the previous access-service state.
+
+## Game-operation baseline
 
 The native musl binary and systemd installer were exercised on Ubuntu 26.04 LTS with Docker 29.1.3, two CPUs and approximately 4 GiB of memory.
 
@@ -30,15 +44,15 @@ The integration run exposed and fixed two provider/platform issues: the current 
 
 ## Static-analysis follow-up
 
-Aislop 0.13.1 reported **61/100**, with **zero errors, zero automatically fixable findings, and zero lint, format or security findings**. Its remaining 25 warnings comprise:
+Aislop 0.13.1 reported **59/100** on an isolated snapshot of the release's tracked source files, with **zero errors, zero automatically fixable findings, and zero lint, format or security findings**. Its remaining 27 warnings comprise:
 
-- 12 maintainability warnings for long UI components/files and repeated blocks. These remain refactoring work.
-- 13 fixed-URL warnings. The cited URLs are intentional upstream API endpoints or test/demo origins, rather than deployment credentials or private hosts.
+- 12 maintainability warnings for long UI components/files and repeated blocks. This includes similar installation-profile data records; the older large components remain refactoring work.
+- 15 fixed-URL warnings. The cited URLs are intentional upstream API endpoints or test/demo origins, rather than deployment credentials or private hosts.
 
 No rule was disabled or reconfigured to obtain this result. Rust, browser and live-node results do not substitute for resolving this maintainability work or for an independent security review.
 
 ## Coverage boundaries
 
-Cloud/rclone providers and external AI providers require operator credentials and were not exercised against live accounts. The live game test covers Paper, not every blueprint. Isolated diagnosis has algorithm/dependency-group tests, but a full live failing-plugin minimization campaign was not part of this run. LXC and a native desktop shell are outside v0.1's implemented scope.
+Named Cloudflare tunnels, public Caddy certificate issuance and an independent operator-managed HTTPS proxy were not exercised with live account/domain credentials. Quick-tunnel URLs are temporary. Cloud/rclone and external AI providers also require operator credentials and were not exercised against live accounts. The game baseline covers Paper, not every blueprint. Isolated diagnosis has algorithm/dependency-group tests, but a full live failing-plugin minimization campaign was not part of this run. LXC and a native desktop shell remain outside the implemented scope.
 
 GitHub build results and native artifacts are available under [Actions](https://github.com/HVHBIGNAME/emberdeck/actions) and [Releases](https://github.com/HVHBIGNAME/emberdeck/releases).

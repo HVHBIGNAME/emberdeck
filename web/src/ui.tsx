@@ -164,9 +164,11 @@ export function Progress({
 export function CopyButton({
   value,
   label = "Copy",
+  showLabel = false,
 }: {
   value: string;
   label?: string;
+  showLabel?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(false);
@@ -178,7 +180,7 @@ export function CopyButton({
   }, [copied]);
   return (
     <button
-      className="icon-button"
+      className={showLabel ? "button primary" : "icon-button"}
       title={
         error
           ? "Clipboard requires HTTPS or localhost"
@@ -199,6 +201,7 @@ export function CopyButton({
       }}
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}
+      {showLabel && <span>{copied ? "Copied" : label}</span>}
     </button>
   );
 }

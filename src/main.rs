@@ -1,3 +1,4 @@
+mod access;
 mod agent;
 mod assistant;
 mod auth;
@@ -19,6 +20,7 @@ mod store;
 mod templates;
 #[cfg(test)]
 mod tests;
+mod tunnel;
 mod web;
 
 use clap::{Parser, Subcommand};
@@ -69,6 +71,11 @@ enum Command {
     Keygen,
     /// Manage a remote panel from the command line.
     Cli(cli::Options),
+    /// Configure private access, Cloudflare Tunnel or a managed HTTPS proxy.
+    Access {
+        #[command(subcommand)]
+        command: access::Command,
+    },
 }
 
 #[tokio::main]
@@ -97,6 +104,7 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Command::Cli(options) => cli::run(options).await?,
+        Command::Access { command } => access::run(command).await?,
         Command::Panel { config, listen } => {
             let mut config = config::Config::load(&config)?;
             if let Some(listen) = listen {

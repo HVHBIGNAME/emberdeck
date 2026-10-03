@@ -27,7 +27,9 @@ jobs:
       - run: cargo test --locked
       - name: Validate installer syntax
         if: runner.os == 'Linux'
-        run: bash -n install.sh
+        run: |
+          bash -n install.sh
+          bash -n scripts/access-install.sh
   web:
     name: Web / Chromium
     runs-on: ubuntu-24.04
@@ -38,7 +40,6 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4

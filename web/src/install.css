@@ -1,0 +1,341 @@
+.install-screen {
+  max-width: 1230px;
+  margin: 0 auto;
+  padding: 28px 34px;
+}
+.install-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.install-heading {
+  padding: 45px 0 32px;
+}
+.install-heading h1 {
+  font-size: 37px;
+  margin: 10px 0 13px;
+}
+.install-heading > p {
+  max-width: 620px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.install-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 21px;
+}
+.install-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.install-options,
+.install-command-card,
+.install-downloads {
+  padding: 26px;
+}
+.install-options > .form-stack {
+  gap: 24px;
+}
+.install-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.install-step > span {
+  color: var(--orange);
+  font-size: 11px;
+  background: #392b22;
+  border: 1px solid #654832;
+  padding: 6px 9px;
+  border-radius: 7px;
+}
+.install-step h2 {
+  margin-bottom: 5px;
+}
+.install-step p {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.install-profiles {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.install-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  background: #13161c;
+}
+.install-profile.selected {
+  border-color: #ad7953;
+  background: #241e1b;
+}
+.install-profile:focus-within {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.install-profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+.install-profile-heading strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.install-profile-heading input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--orange);
+  flex-shrink: 0;
+}
+.install-profile .tag {
+  align-self: flex-start;
+  font-size: 8px;
+}
+.install-profile-description {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.install-advanced {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.install-advanced summary {
+  font-size: 12px;
+  cursor: pointer;
+}
+.install-advanced > .form-stack {
+  margin-top: 18px;
+}
+.install-ports {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.install-boundary {
+  font-size: 10px;
+  line-height: 1.8;
+}
+.install-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 24px;
+}
+.install-command-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 12px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.9px;
+}
+.install-command {
+  padding: 17px;
+  margin: 0 0 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid #333945;
+  border-radius: 8px;
+  color: #bacadf;
+  background: #0e1117;
+  font-size: 11px;
+  line-height: 1.9;
+}
+.install-command-placeholder {
+  padding: 24px;
+  border: 1px dashed var(--border);
+  color: var(--dim);
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+.install-command-card > .button {
+  width: 100%;
+  justify-content: center;
+}
+.install-checklist {
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 26px 0;
+}
+.install-checklist li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 11px;
+}
+.install-checklist svg {
+  color: var(--green);
+}
+.install-signin {
+  display: flex;
+  gap: 10px;
+  padding: 17px 0;
+  border-top: 1px solid var(--border);
+}
+.install-signin > div {
+  min-width: 0;
+}
+.install-signin > svg {
+  color: var(--orange);
+  margin-top: 2px;
+}
+.install-signin strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.install-signin p {
+  font-size: 10px;
+  margin: 7px 0 11px;
+  line-height: 1.7;
+}
+.install-signin code {
+  display: block;
+  font-size: 10px;
+  color: #bcc7d5;
+  overflow-wrap: anywhere;
+  margin-top: 7px;
+}
+.install-downloads h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.install-downloads p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 13px 0;
+}
+.install-downloads a,
+.install-footer a {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--orange);
+  font-size: 11px;
+}
+.install-current {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 18px 23px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.install-current strong {
+  font-size: 12px;
+}
+.install-current p,
+.install-current small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.install-current-address {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-left: auto;
+  max-width: 70%;
+}
+.install-current-address code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.install-current-address small {
+  flex-basis: 100%;
+}
+.install-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 36px;
+  padding: 23px 0 10px;
+  color: var(--dim);
+  font-size: 10px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 850px) {
+  .install-layout {
+    grid-template-columns: 1fr;
+  }
+  .install-preview {
+    position: static;
+  }
+  .install-current-address {
+    max-width: 100%;
+    margin-left: 0;
+  }
+}
+@media (max-width: 500px) {
+  .install-screen {
+    padding: 20px 16px;
+  }
+  .install-header {
+    padding-bottom: 24px;
+    gap: 10px;
+  }
+  .install-header .logo {
+    font-size: 18px;
+  }
+  .install-header .button {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .install-heading {
+    padding-top: 28px;
+  }
+  .install-heading h1 {
+    font-size: 29px;
+  }
+  .install-options,
+  .install-command-card,
+  .install-downloads {
+    padding: 19px;
+  }
+  .install-profiles {
+    grid-template-columns: 1fr;
+  }
+  .install-footer {
+    flex-wrap: wrap;
+  }
+}

@@ -193,7 +193,7 @@ pub fn check_csrf(headers: &HeaderMap, config: &Config) -> Result<()> {
         .unwrap_or("");
     let same_host = reqwest::Url::parse(&format!("{}://{host}", actual.scheme()))
         .is_ok_and(|expected| expected.origin() == actual.origin());
-    if origin.trim_end_matches('/') == config.public_url.trim_end_matches('/')
+    if origin.trim_end_matches('/') == config.effective_public_url()?.trim_end_matches('/')
         || (same_host && matches!(actual.scheme(), "http" | "https"))
     {
         Ok(())

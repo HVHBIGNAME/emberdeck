@@ -1,8 +1,10 @@
 # Installation & operations
 
+For quick HTTPS, Cloudflare connector tokens, managed Caddy, existing reverse proxies and the web command generator, see [installation profiles](installation-profiles.md).
+
 ## Native installation
 
-The release executable includes the web interface, API, CLI, node agent, and SFTP server. Docker is only required on machines that run Minecraft containers. SQLite is embedded.
+The release executable includes the web interface, API, CLI, node agent, and SFTP server. Docker is required on Minecraft nodes and for the managed Caddy profile; a panel using private access or a tunnel does not require it. SQLite is embedded.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HVHBIGNAME/emberdeck/main/install.sh | sudo bash
@@ -45,7 +47,7 @@ sudo env \
   bash install.sh
 ```
 
-Other installer options: `EMBER_VERSION=v0.1.0`, `EMBER_MODE=panel|agent|all`, and `EMBER_BINARY=/absolute/path/to/emberdeck` for a locally built release.
+Other installer options: `EMBER_VERSION=v0.2.0`, `EMBER_MODE=panel|agent|all`, and `EMBER_BINARY=/absolute/path/to/emberdeck` for a locally built release. Access profiles also have command-line flags; run `bash install.sh --help` for the complete list.
 
 For an existing installation, update the TOML configuration and restart the affected service. Initial node metadata is persisted in the panel database; manage additional nodes in **Nodes**. Use distinct panel, agent, SFTP and game ports.
 

@@ -17,6 +17,7 @@ const page = await context.newPage();
 await page.clock.setFixedTime(new Date("2026-10-02T18:24:00Z"));
 const sections = [
   ["overview", "/overview"],
+  ["installation", "/install"],
   ["console", "/servers/oakheart/console"],
   ["library", "/library"],
   ["automations", "/automations"],
@@ -24,13 +25,15 @@ const sections = [
 ];
 for (const [name, route] of sections) {
   await page.goto(`${baseURL}/demo#${route}`, { waitUntil: "networkidle" });
-  await page.locator(".main-content").waitFor();
+  await page
+    .locator(route === "/install" ? ".install-screen" : ".main-content")
+    .waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(650);
   await page.screenshot({
     path: resolve(destination, `${name}.png`),
     animations: "disabled",
-    fullPage: name === "overview",
+    fullPage: name === "overview" || name === "installation",
   });
   await page.waitForTimeout(1600);
 }
@@ -52,7 +55,16 @@ await mobile.screenshot({
   fullPage: true,
   animations: "disabled",
 });
+await mobile.goto(`${baseURL}/demo#/install`, { waitUntil: "networkidle" });
+await mobile
+  .getByRole("heading", { name: "One command. Your choice." })
+  .waitFor();
+await mobile.screenshot({
+  path: resolve(destination, "installation-mobile.png"),
+  fullPage: true,
+  animations: "disabled",
+});
 await browser.close();
 console.log(
-  `Captured ${sections.length} desktop views, mobile view, and walkthrough in ${destination}`,
+  `Captured ${sections.length} desktop views, two mobile views, and walkthrough in ${destination}`,
 );

@@ -25,7 +25,8 @@ export default defineConfig({
   webServer: process.env.EMBER_TEST_URL
     ? undefined
     : {
-        command: "npm run dev -- --port 4173 --strictPort",
+        command:
+          "npm run build && npm exec vite -- preview --config web/vite.config.ts --host 127.0.0.1 --port 4173 --strictPort",
         url: "http://127.0.0.1:4173/demo",
         reuseExistingServer: false,
         cwd: fileURLToPath(new URL("..", import.meta.url)),

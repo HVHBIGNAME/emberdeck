@@ -2,7 +2,7 @@
 
 ## Components
 
-The executable has `panel`, `agent`, `cli`, `demo`, `setup` and `keygen` modes. `build.rs` embeds the compiled `web/dist` into the executable. Rust serves all production assets; JavaScript tooling is only needed to develop/build the interface.
+The executable has `panel`, `agent`, `cli`, `demo`, `setup`, `access` and `keygen` modes. `build.rs` embeds the compiled `web/dist` into the executable. Rust serves all production assets; JavaScript tooling is only needed to develop/build the interface.
 
 The panel owns tokens, sessions, node registration, server definitions, automation policies, the audit trail, and cached observations. The node owns actual server directories, Docker operations, per-server RCON secrets, SFTP leases, package integrity records, backups, and background jobs. Both use separate SQLite databases with WAL.
 
@@ -14,6 +14,7 @@ The node runtime uses the Docker Engine API over its local Unix socket. Server b
 - Browser sessions reference token records, expire after 12 hours, and are HttpOnly / SameSite=Strict. Cookie writes check the request origin. With an HTTPS public URL, cookies are Secure.
 - The panel service has no Docker socket. A compromised panel with a node token can nevertheless control that node; treat both control plane and management transport as privileged.
 - Remote nodes require HTTPS. The supplied installer uses loopback management listeners and keeps credentials out of game volumes.
+- Access setup supports private SSH forwarding, temporary and token-based Cloudflare tunnels, a managed Caddy container, and an existing HTTPS proxy. The native tunnel supervisor runs cloudflared as a separate unprivileged account. Connector tokens are private files, while an independently readable URL file lets the panel follow quick-tunnel address changes. Public profiles issue Secure cookies. Only requests arriving from loopback in a configured proxy profile can supply the corresponding client-IP header for login rate limiting.
 - File access uses `cap-std` directory capabilities rather than merely checking string prefixes. Traversal, alternate Windows path syntax, and links escaping the server root are rejected. SFTP does not implement shell/exec, link creation, or chmod/chown.
 - Game containers are non-root, drop Linux capabilities, use no-new-privileges, have read-only root filesystems and bounded temporary storage, hard CPU/RAM/swap/PID limits, and separate bridge networks. RCON is not published on the host. These are Docker boundaries, not VM-grade isolation or a kernel vulnerability guarantee.
 - Disk budgets are measured and checked before managed writes/startup. Minecraft can grow its own data between observations: this is **not a hard filesystem quota**.

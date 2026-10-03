@@ -168,6 +168,7 @@ pub fn router(panel: Panel) -> Router {
         .route("/auth/me", get(me))
         .route("/auth/logout", post(logout))
         .route("/overview", get(overview))
+        .route("/deployment", get(deployment))
         .route("/servers", get(servers).post(create_server))
         .route(
             "/servers/{id}",
@@ -204,14 +205,22 @@ pub fn router(panel: Panel) -> Router {
         .route("/api/auth/login", post(login))
         .route(
             "/healthz",
-            get(|| async {
-                Json(json!({"ok":true,"service":"emberdeck","version":env!("CARGO_PKG_VERSION")}))
+            get(|State(panel): State<Panel>| async move {
+                Json(json!({"ok":true,"service":"emberdeck","version":env!("CARGO_PKG_VERSION"),"installation_id":crate::access::installation_id(&panel.config)}))
             }),
         )
         .fallback(crate::web::asset)
         .layer(DefaultBodyLimit::max(48 * 1024 * 1024))
         .layer(middleware::from_fn(crate::web::headers))
         .with_state(panel)
+}
+
+async fn deployment(
+    State(panel): State<Panel>,
+    Extension(principal): Extension<Principal>,
+) -> Result<Json<Value>> {
+    principal.admin()?;
+    Ok(Json(crate::access::view(&panel.config)?))
 }
 
 async fn protect(State(panel): State<Panel>, mut request: Request, next: Next) -> Result<Response> {
@@ -244,7 +253,7 @@ async fn login(
     if headers.contains_key("origin") {
         auth::check_csrf(&headers, &panel.config)?;
     }
-    let key = peer.ip().to_string();
+    let key = crate::access::client_ip(peer.ip(), &headers, panel.config.access_mode).to_string();
     panel.login_attempts.retain(|_, (at, _)| *at > now() - 300);
     {
         let mut attempts = panel
@@ -270,7 +279,7 @@ async fn login(
     panel
         .store
         .audit(&principal.name, "Signed in", None, "Web session")?;
-    let secure = if panel.config.public_url.starts_with("https://") {
+    let secure = if panel.config.secure_cookies() {
         "; Secure"
     } else {
         ""

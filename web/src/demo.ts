@@ -1,3 +1,4 @@
+import packageInfo from "../../package.json" with { type: "json" };
 import type {
   Activity,
   Backup,
@@ -11,6 +12,7 @@ import type {
 } from "./types";
 
 const now = Math.floor(Date.now() / 1000);
+const { version } = packageInfo;
 const gi = 1024 ** 3;
 const configurations = [
   [
@@ -206,7 +208,7 @@ const node: Node = {
   sftp_port: 2022,
   info: {
     name: "eu-central-01",
-    version: "0.1.0",
+    version,
     os: "Ubuntu 24.04 LTS",
     architecture: "x86_64",
     cpu_cores: 8,
@@ -401,7 +403,7 @@ export function demoReply(path: string): unknown {
         permissions: ["admin"],
       },
       assistant_configured: false,
-      version: "0.1.0",
+      version,
     };
   if (route === "/api/overview") return overview;
   if (route === "/api/servers") return { servers: demoServers };
@@ -472,13 +474,11 @@ export function demoReply(path: string): unknown {
         return {
           packages:
             server.template === "fabric"
-              ? packages
-                  .slice(0, 3)
-                  .map((p) => ({
-                    ...p,
-                    kind: "mod",
-                    path: p.path.replace("plugins/", "mods/"),
-                  }))
+              ? packages.slice(0, 3).map((p) => ({
+                  ...p,
+                  kind: "mod",
+                  path: p.path.replace("plugins/", "mods/"),
+                }))
               : packages,
         };
       case "backups":

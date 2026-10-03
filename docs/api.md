@@ -2,6 +2,8 @@
 
 All panel routes are under `/api`. Authenticate with `Authorization: Bearer <token>` or an HttpOnly browser session. Cookie-authenticated mutations require a matching `Origin`; bearer clients don't need a CSRF cookie.
 
+HTTPS access profiles issue Secure cookies. For quick tunnels, the expected public origin follows the current URL file without restarting the panel. `/healthz` is unauthenticated and returns readiness, version and an opaque `installation_id`, which the access installer uses to verify that a public address reaches the intended installation.
+
 ## Native CLI
 
 ```bash
@@ -56,6 +58,7 @@ emberdeck cli api GET '/api/catalog/search?server_id=SERVER_ID&kind=plugin&q=per
 | POST | `/auth/login` | Exchange `{token}` for a browser cookie |
 | GET | `/auth/me` | Current role, permissions, feature availability |
 | POST | `/auth/logout` | Revoke the browser session |
+| GET | `/deployment` | Access mode, origin, current public URL, version, ephemeral/Secure-cookie flags and installation identifier (admin) |
 | GET | `/overview` | Visible servers, activity and tasks |
 | GET / POST | `/servers` | List / create servers (creation: admin) |
 | GET / PUT / DELETE | `/servers/{id}` | Read / configure / remove server |
@@ -142,6 +145,23 @@ Viewers receive read permissions. Operators receive read/write and assistant per
 ```
 
 Raw tokens are returned once. Revocation is applied to existing cookie sessions because sessions reference the token's current record.
+
+## Host access commands
+
+Access provisioning is a local, root-only Linux operation. The web installation wizard generates the command; it does not expose a remote root shell or accept Cloudflare connector credentials.
+
+```bash
+sudo emberdeck access inspect
+sudo emberdeck access inspect --field url
+sudo emberdeck access inspect --field origin
+sudo emberdeck access install --mode quick
+sudo emberdeck access install --mode cloudflare --public-url https://panel.example.com --token-file /root/cloudflared-token
+sudo emberdeck access install --mode caddy --public-url https://panel.example.com
+sudo emberdeck access install --mode proxy --public-url https://panel.example.com
+sudo emberdeck access install --mode local
+```
+
+`access inspect` contains no credentials. `access configure` changes network configuration only and requires a panel restart; the higher-level `access install` also provisions services, checks readiness and restores the previous access configuration on failure. See [installation profiles](installation-profiles.md) for DNS, token, networking and recovery requirements.
 
 ## Node protocol
 

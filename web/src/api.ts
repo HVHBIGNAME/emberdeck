@@ -30,6 +30,14 @@ export async function api<T>(
     headers: { "Content-Type": "application/json", ...options.headers },
     credentials: "same-origin",
   });
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new ApiError(
+      response.status >= 500
+        ? `The panel or its access tunnel is unavailable (HTTP ${response.status}). Retry after it reconnects.`
+        : `Unexpected panel response (HTTP ${response.status}).`,
+      response.status,
+    );
+  }
   const data: unknown = await response.json();
   if (!response.ok) {
     const message =

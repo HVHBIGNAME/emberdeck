@@ -115,6 +115,7 @@ async fn scoped_viewer_sees_only_assigned_server_and_cannot_control_it() {
     assert_eq!(result["servers"][0]["id"], "one");
     for (method, path, value) in [
         ("GET", "/api/servers/two", Value::Null),
+        ("GET", "/api/deployment", Value::Null),
         (
             "POST",
             "/api/servers/one/actions",
@@ -127,6 +128,44 @@ async fn scoped_viewer_sees_only_assigned_server_and_cannot_control_it() {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
+}
+
+#[tokio::test]
+async fn tunnel_login_uses_secure_cookies_and_rotating_public_url() {
+    let (temp, mut panel, owner) = setup();
+    let url_file = temp.path().join("public-url");
+    let config = std::sync::Arc::make_mut(&mut panel.config);
+    config.access_mode = crate::access::Mode::Quick;
+    config.public_url_file = Some(url_file.clone());
+    let master_hash = config.master_token_hash.clone();
+    let router = panel::router(panel);
+    for host in ["first-world", "next-world"] {
+        let origin = format!("https://{host}.trycloudflare.com");
+        std::fs::write(&url_file, &origin).unwrap();
+        let mut login = request("POST", "/api/auth/login", None, json!({"token":owner}));
+        login
+            .headers_mut()
+            .insert("origin", origin.parse().unwrap());
+        let response = router.clone().oneshot(login).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            response.headers()["set-cookie"]
+                .to_str()
+                .unwrap()
+                .contains("Secure")
+        );
+        let response = router
+            .clone()
+            .oneshot(request("GET", "/api/deployment", Some(&owner), Value::Null))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let deployment = body(response).await;
+        assert_eq!(deployment["public_url"], origin);
+        assert_eq!(deployment["mode"], "quick");
+        assert!(!deployment.to_string().contains(&owner));
+        assert!(!deployment.to_string().contains(&master_hash));
     }
 }
 

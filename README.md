@@ -9,7 +9,7 @@
 A native, self-hosted Minecraft control plane.<br />
 One Rust binary. An embedded web panel. A Linux agent. A real CLI.
 
-[Live demo](https://hvhbigname.github.io/emberdeck/) · [Quick start](#get-started) · [Documentation](docs/guide.md) · [Русский](docs/README.ru.md)
+[Live demo](https://hvhbigname.github.io/emberdeck/) · [Install wizard](https://hvhbigname.github.io/emberdeck/#/install) · [Documentation](docs/guide.md) · [Русский](docs/README.ru.md)
 
 [![Check](https://github.com/HVHBIGNAME/emberdeck/actions/workflows/ci.yml/badge.svg)](https://github.com/HVHBIGNAME/emberdeck/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/HVHBIGNAME/emberdeck?color=eda773&label=release)](https://github.com/HVHBIGNAME/emberdeck/releases)
@@ -35,25 +35,25 @@ One Rust binary. An embedded web panel. A Linux agent. A real CLI.
 
 ## Get started
 
-On a Linux machine with systemd (the installer supports Ubuntu / Debian):
+Choose a profile in the [installation wizard](https://hvhbigname.github.io/emberdeck/#/install), copy one command and run it on your Linux host. For a quick HTTPS address without an account or inbound web ports:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HVHBIGNAME/emberdeck/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/HVHBIGNAME/emberdeck/main/install.sh | sudo bash -s -- --access quick
 ```
 
-The installer downloads a checksum-verified native release, installs Docker if needed, creates separate panel / agent services, and generates private credentials. **No Python, Node.js, database server, or Rust toolchain is needed at runtime.**
+The Ubuntu/Debian installer downloads a checksum-verified native release, installs Docker if needed, creates separate panel / agent services and configures Cloudflare Tunnel. **No Python, Node.js, database server, or Rust toolchain is needed at runtime.**
 
-The panel binds to loopback by default. From your computer:
-
-```bash
-ssh -L 8080:127.0.0.1:8080 root@your-server
-```
-
-Open **http://localhost:8080** and retrieve your owner token on the host:
+Open the HTTPS address printed by the installer. Retrieve your owner token in the same SSH session:
 
 ```bash
 sudo cat /etc/emberdeck/owner-token
 ```
+
+Quick URLs change when the tunnel restarts. For a stable address, use a Cloudflare connector token or managed Caddy on your own domain. Private SSH access and existing HTTPS proxies are also supported.
+
+[Compare all five installation profiles →](docs/installation-profiles.md)
+
+![Installation wizard: access profiles and a copyable native installation command](docs/media/installation.png)
 
 Choose **New server**, pick a blueprint, set its limits, and explicitly accept the [Minecraft EULA](https://www.minecraft.net/eula). First boot downloads the selected runtime and core.
 
@@ -96,7 +96,7 @@ The panel has no Docker socket. Each node has its own management token. Game con
 
 ## Where this release stands
 
-**v0.1 is an early release.** The implemented paths are usable, but this is not a production-hardening claim.
+**v0.2 is an early release.** The implemented paths are usable, but this is not a production-hardening claim.
 
 Static findings are review signals, not an antivirus verdict. Isolated diagnosis covers reproducible **startup** failures; it never silently changes the original. An optional fix requires a healthy complementary trial, unchanged JAR hashes, and a backup. Player events currently use polling. Cloud backups and AI need your own provider configuration.
 

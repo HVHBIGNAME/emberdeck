@@ -9,6 +9,8 @@ src/agent.rs        node protocol and operations
 src/runtime.rs      Docker Engine client
 src/panel.rs        authenticated control-plane API
 src/auth.rs         scoped tokens and browser sessions
+src/access.rs       access profiles, URL validation and host configuration
+src/tunnel.rs       native cloudflared supervision and rotating URL publication
 src/files.rs        capability-confined filesystem access
 src/sftp.rs         native SSH/SFTP subsystem
 src/catalog.rs      version catalogs and package providers
@@ -43,9 +45,12 @@ npm run build
 npx playwright install chromium
 npm run test:e2e
 bash -n install.sh
+bash -n scripts/access-install.sh
 ```
 
 Build the web UI before a release: `build.rs` embeds the current `web/dist`. A Rust-only development build without assets intentionally serves a build-instructions page.
+
+The browser suite builds and serves the production bundle on loopback port 4173. Set `EMBER_TEST_URL` to test an already running compatible instance instead. Installation tests cover pre-login access, profile validation, shell quoting and proxy error responses.
 
 Test security boundaries with negative cases: cross-server permissions, revocation, CSRF, traversal/symlink attempts, archive links/limits, unknown player state, and inconclusive diagnosis. Do not relabel heuristic scanner results as “safe”.
 
