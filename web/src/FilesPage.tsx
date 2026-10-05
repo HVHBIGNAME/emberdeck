@@ -22,12 +22,15 @@ import {
   ErrorBox,
   Loading,
   Modal,
+  AnimatePresence,
   bytes,
   date,
   saveFile,
 } from "./ui";
+import { useTranslation } from "./i18n";
 
 export function FilesPage({ server }: { server: GameServer }) {
+  const { t } = useTranslation();
   const { revision, runAction, can, notify } = useWorkspace();
   const [path, setPath] = useState("/");
   const [selected, setSelected] = useState<FileContent | null>(null);
@@ -40,6 +43,7 @@ export function FilesPage({ server }: { server: GameServer }) {
   const [entry, setEntry] = useState<FileEntry | null>(null);
   const [name, setName] = useState("");
   const [sftp, setSftp] = useState(false);
+  const [discard, setDiscard] = useState(false);
   const upload = useRef<HTMLInputElement>(null);
   const files = useApi<{ entries: FileEntry[] }>(
     `/api/servers/${server.id}/files?path=${encodeURIComponent(path)}`,
@@ -103,14 +107,10 @@ export function FilesPage({ server }: { server: GameServer }) {
           <header>
             <button
               className="icon-button"
-              aria-label="Back to files"
+              aria-label={t("Back to files")}
               onClick={() => {
-                if (
-                  draft !== selected.content &&
-                  !window.confirm("Discard unsaved changes?")
-                )
-                  return;
-                setSelected(null);
+                if (draft !== selected.content) setDiscard(true);
+                else setSelected(null);
               }}
             >
               <ArrowLeft size={17} />
@@ -121,7 +121,7 @@ export function FilesPage({ server }: { server: GameServer }) {
             <span className="tag">{bytes(selected.size)}</span>
             <button
               className="icon-button"
-              aria-label="Download file"
+              aria-label={t("Download file")}
               onClick={() => download(selected)}
             >
               <Download size={15} />
@@ -154,13 +154,13 @@ export function FilesPage({ server }: { server: GameServer }) {
                 }}
               >
                 <Save size={13} />
-                Save
+                {t("Save")}
               </Button>
             )}
           </header>
           {selected.encoding === "utf8" ? (
             <textarea
-              aria-label="File contents"
+              aria-label={t("File contents")}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               readOnly={!writable}
@@ -168,11 +168,13 @@ export function FilesPage({ server }: { server: GameServer }) {
             />
           ) : (
             <div className="empty">
-              <h3>Binary file</h3>
-              <p>Download this file to open it in a local application.</p>
+              <h3>{t("Binary file")}</h3>
+              <p>
+                {t("Download this file to open it in a local application.")}
+              </p>
               <Button onClick={() => download(selected)}>
                 <Download size={15} />
-                Download
+                {t("Download")}
               </Button>
             </div>
           )}
@@ -219,7 +221,7 @@ export function FilesPage({ server }: { server: GameServer }) {
                     }}
                   >
                     <FolderPlus size={13} />
-                    Folder
+                    {t("Folder")}
                   </Button>
                   <Button
                     onClick={() => {
@@ -228,7 +230,7 @@ export function FilesPage({ server }: { server: GameServer }) {
                     }}
                   >
                     <FilePlus2 size={13} />
-                    File
+                    {t("File")}
                   </Button>
                   <Button
                     variant="primary"
@@ -236,7 +238,7 @@ export function FilesPage({ server }: { server: GameServer }) {
                     busy={busy}
                   >
                     <Upload size={13} />
-                    Upload
+                    {t("Upload")}
                   </Button>
                 </>
               )}
@@ -287,10 +289,10 @@ export function FilesPage({ server }: { server: GameServer }) {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Size</th>
-                    <th>Modified</th>
-                    <th>Actions</th>
+                    <th>{t("Name")}</th>
+                    <th>{t("Size")}</th>
+                    <th>{t("Modified")}</th>
+                    <th>{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -317,7 +319,9 @@ export function FilesPage({ server }: { server: GameServer }) {
                             <>
                               <button
                                 className="icon-button"
-                                aria-label={`Rename ${file.name}`}
+                                aria-label={t("Rename {{name}}", {
+                                  name: file.name,
+                                })}
                                 onClick={() => {
                                   setEntry(file);
                                   setName(file.name);
@@ -328,7 +332,9 @@ export function FilesPage({ server }: { server: GameServer }) {
                               </button>
                               <button
                                 className="icon-button"
-                                aria-label={`Delete ${file.name}`}
+                                aria-label={t("Delete {{name}}", {
+                                  name: file.name,
+                                })}
                                 onClick={() => {
                                   setEntry(file);
                                   setDialog("remove");
@@ -345,72 +351,106 @@ export function FilesPage({ server }: { server: GameServer }) {
                 </tbody>
               </table>
               {files.data?.entries.length === 0 && (
-                <p className="quiet">This directory is empty.</p>
+                <p className="quiet">{t("This directory is empty.")}</p>
               )}
             </div>
           )}
           <p className="quiet">
-            Files are confined to this server's directory. CPU and memory limits
-            are managed separately in Settings.
+            {t(
+              "Files are confined to this server's directory. CPU and memory limits are managed separately in Settings.",
+            )}
           </p>
         </>
       )}
-      {dialog && (
-        <Modal
-          title={
-            dialog === "remove"
-              ? `Delete “${entry?.name}”?`
-              : dialog === "rename"
-                ? "Rename file or folder"
-                : dialog === "folder"
-                  ? "Create a folder"
-                  : "Create a file"
-          }
-          subtitle={
-            dialog === "remove"
-              ? "This removes the selected file. Folders must be empty."
-              : `Inside ${path}`
-          }
-          onClose={() => setDialog(null)}
-        >
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void mutateFile();
-            }}
+      <AnimatePresence>
+        {dialog && (
+          <Modal
+            key="file-action"
+            title={
+              dialog === "remove"
+                ? t("Delete “{{name}}”?", { name: entry?.name })
+                : dialog === "rename"
+                  ? "Rename file or folder"
+                  : dialog === "folder"
+                    ? "Create a folder"
+                    : "Create a file"
+            }
+            subtitle={
+              dialog === "remove"
+                ? t("This removes the selected file. Folders must be empty.")
+                : t("Inside {{path}}", { path })
+            }
+            onClose={() => setDialog(null)}
           >
-            {dialog !== "remove" && (
-              <label>
-                Name
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  maxLength={200}
-                  pattern="[^/\\\\]+"
-                />
-              </label>
-            )}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void mutateFile();
+              }}
+            >
+              {dialog !== "remove" && (
+                <label>
+                  {t("Name")}
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    maxLength={200}
+                    pattern="[^/\\\\]+"
+                  />
+                </label>
+              )}
+              <div className="modal-actions">
+                <Button type="button" onClick={() => setDialog(null)}>
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  variant={dialog === "remove" ? "danger" : "primary"}
+                  busy={busy}
+                >
+                  {t(
+                    dialog === "remove"
+                      ? "Delete"
+                      : dialog === "rename"
+                        ? "Rename"
+                        : "Create",
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+        {sftp && (
+          <SftpDialog
+            key="sftp"
+            server={server}
+            onClose={() => setSftp(false)}
+          />
+        )}
+        {discard && (
+          <Modal
+            key="discard"
+            title="Discard unsaved changes?"
+            onClose={() => setDiscard(false)}
+          >
             <div className="modal-actions">
-              <Button type="button" onClick={() => setDialog(null)}>
-                Cancel
+              <Button onClick={() => setDiscard(false)}>
+                {t("Keep editing")}
               </Button>
               <Button
-                type="submit"
-                variant={dialog === "remove" ? "danger" : "primary"}
-                busy={busy}
+                variant="danger"
+                onClick={() => {
+                  setSelected(null);
+                  setDiscard(false);
+                }}
               >
-                {dialog === "remove"
-                  ? "Delete"
-                  : dialog === "rename"
-                    ? "Rename"
-                    : "Create"}
+                {t("Discard changes")}
               </Button>
             </div>
-          </form>
-        </Modal>
-      )}
-      {sftp && <SftpDialog server={server} onClose={() => setSftp(false)} />}
+          </Modal>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -423,6 +463,7 @@ function SftpDialog({
   onClose: () => void;
 }) {
   const { runAction, can } = useWorkspace();
+  const { t } = useTranslation();
   const [readOnly, setReadOnly] = useState(!can("files.write", server.id));
   const [busy, setBusy] = useState(false);
   const [credential, setCredential] = useState<Record<string, unknown> | null>(
@@ -431,7 +472,7 @@ function SftpDialog({
   return (
     <Modal
       title="Your files, in your favorite client."
-      subtitle="Temporary SFTP access, scoped to this server only."
+      subtitle={t("Temporary SFTP access, scoped to this server only.")}
       onClose={onClose}
     >
       {credential ? (
@@ -443,24 +484,26 @@ function SftpDialog({
               ["Password", String(credential.password)],
             ].map(([label, value]) => (
               <div className="credential" key={label}>
-                <span>{label}</span>
+                <span>{t(label)}</span>
                 <code>{value}</code>
                 <CopyButton
                   value={value}
-                  label={`Copy ${label.toLowerCase()}`}
+                  label={t("Copy {{label}}", { label: t(label) })}
                 />
               </div>
             ))}
           </div>
           <p className="quiet">
-            Expires {date(Number(credential.expires_at))} ·{" "}
-            {credential.read_only ? "Read only" : "Read and write"}
+            {t("Expires {{date}}", {
+              date: date(Number(credential.expires_at)),
+            })}{" "}
+            · {t(credential.read_only ? "Read only" : "Read and write")}
             <br />
-            No shell access. No access to other servers.
+            {t("No shell access. No access to other servers.")}
           </p>
           <div className="modal-actions">
             <Button variant="primary" onClick={onClose}>
-              Done
+              {t("Done")}
             </Button>
           </div>
         </>
@@ -469,9 +512,9 @@ function SftpDialog({
           <div className="notice">
             <LockKeyhole size={17} />
             <span>
-              Works with FileZilla, WinSCP, and other SFTP clients. A token is
-              issued for one hour. Verify the node's SSH host key on first
-              connection.
+              {t(
+                "Works with FileZilla, WinSCP, and other SFTP clients. A token is issued for one hour. Verify the node's SSH host key on first connection.",
+              )}
             </span>
           </div>
           <div style={{ height: 20 }} />
@@ -482,10 +525,10 @@ function SftpDialog({
               disabled={!can("files.write", server.id)}
               onChange={(e) => setReadOnly(e.target.checked)}
             />
-            Read-only access
+            {t("Read-only access")}
           </label>
           <div className="modal-actions">
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>{t("Cancel")}</Button>
             <Button
               variant="primary"
               busy={busy}
@@ -501,7 +544,7 @@ function SftpDialog({
               }}
             >
               <LockKeyhole size={14} />
-              Generate access
+              {t("Generate access")}
             </Button>
           </div>
         </>

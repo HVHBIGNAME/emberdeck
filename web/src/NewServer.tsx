@@ -12,7 +12,10 @@ import {
 import { post, useApi } from "./api";
 import type { GameServer, Node, Template } from "./types";
 import { useWorkspace } from "./context";
-import { Button, ErrorBox, Modal, pretty } from "./ui";
+import { Button, ErrorBox, Modal, Select, pretty } from "./ui";
+import { useTranslation } from "./i18n";
+import { AnimatePresence, motion } from "motion/react";
+import { usePreferences } from "./Preferences";
 
 export function NewServer({
   initialTemplate,
@@ -25,6 +28,8 @@ export function NewServer({
   initialVersion?: string;
   onClose: () => void;
 }) {
+  const { t: tr } = useTranslation();
+  const { motion: animated } = usePreferences();
   const { servers, notify, refresh, navigate, runAction } = useWorkspace();
   const [step, setStep] = useState(0);
   const [template, setTemplate] = useState(initialTemplate);
@@ -79,7 +84,7 @@ export function NewServer({
         accept_eula: eula,
       });
       refresh();
-      notify(`${server.name} is ready to set up.`);
+      notify(tr("{{name}} is ready to set up.", { name: server.name }));
       onClose();
       navigate(`/servers/${server.id}/console`);
       if (start)
@@ -95,7 +100,7 @@ export function NewServer({
   return (
     <Modal
       title="A new world is waiting."
-      subtitle="Choose your foundation. We'll take care of the setup."
+      subtitle={tr("Choose your foundation. We'll take care of the setup.")}
       onClose={onClose}
       wide
     >
@@ -103,255 +108,278 @@ export function NewServer({
         {["Blueprint", "Resources", "Launch"].map((label, i) => (
           <span key={label} className={step === i ? "active" : ""}>
             <b>{step > i ? <Check size={12} /> : i + 1}</b>
-            {label}
+            {tr(label)}
             {i < 2 && <ArrowRight size={12} />}
           </span>
         ))}
       </div>
       <ErrorBox error={error || templates.error || nodes.error} />
-      {step === 0 && (
-        <div className="form-stack">
-          <div className="blueprint-grid wizard-blueprints">
-            {templates.data?.templates.map((t) => (
-              <button
-                key={t.id}
-                className={`blueprint-card ${t.family} ${template === t.id ? "selected" : ""}`}
-                onClick={() => {
-                  setTemplate(t.id);
-                  setVersion("");
-                  setLoader("");
-                  setModpack("");
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={animated ? { opacity: 0, x: 12 } : false}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: animated ? -8 : 0 }}
+          transition={{ duration: animated ? 0.18 : 0 }}
+        >
+          {step === 0 && (
+            <div className="form-stack">
+              <div className="blueprint-grid wizard-blueprints">
+                {templates.data?.templates.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`blueprint-card ${t.family} ${template === t.id ? "selected" : ""}`}
+                    onClick={() => {
+                      setTemplate(t.id);
+                      setVersion("");
+                      setLoader("");
+                      setModpack("");
+                    }}
+                  >
+                    <span className="blueprint-icon">{t.name[0]}</span>
+                    <span>
+                      <h3>{t.name}</h3>
+                      <small>
+                        {tr(
+                          t.family === "hybrid" ? "Mods + plugins" : t.family,
+                        )}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                <label>
+                  {tr("Minecraft version")}
+                  <Select
+                    label={tr("Minecraft version")}
+                    value={selectedVersion}
+                    onValueChange={(value) => {
+                      setVersion(value);
+                      setLoader("");
+                    }}
+                    disabled={versions.loading}
+                    placeholder={tr(
+                      versions.loading
+                        ? "Fetching published versions…"
+                        : "Choose a version",
+                    )}
+                    options={(versions.data?.versions || []).map((value) => ({
+                      value,
+                      label: value,
+                    }))}
+                  />
+                </label>
+                <label>
+                  {tr("Core / loader build")}
+                  <Select
+                    label={tr("Core / loader build")}
+                    value={loader}
+                    onValueChange={setLoader}
+                    options={[
+                      { value: "", label: tr("Latest compatible build") },
+                      ...[...new Set(loaders.data?.versions || [])].map(
+                        (value) => ({ value, label: value }),
+                      ),
+                    ]}
+                  />
+                </label>
+              </div>
+              <ErrorBox
+                error={versions.error || loaders.error}
+                retry={() => {
+                  void versions.refresh();
+                  void loaders.refresh();
                 }}
-              >
-                <span className="blueprint-icon">{t.name[0]}</span>
-                <span>
-                  <h3>{t.name}</h3>
+              />
+              {family === "mods" && (
+                <label>
+                  {tr("Modrinth modpack (optional)")}
+                  <input
+                    value={modpack}
+                    onChange={(e) => setModpack(e.target.value)}
+                    placeholder={tr(
+                      "Project ID or slug, e.g. fabulously-optimized",
+                    )}
+                  />
                   <small>
-                    {t.family === "hybrid" ? "Mods + plugins" : t.family}
+                    {tr(
+                      "The node resolves the pack for this Minecraft version and loader.",
+                    )}
                   </small>
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="form-grid">
-            <label>
-              Minecraft version
-              <select
-                value={selectedVersion}
-                onChange={(e) => {
-                  setVersion(e.target.value);
-                  setLoader("");
-                }}
-                disabled={versions.loading}
-              >
-                <option value="" disabled>
-                  {versions.loading
-                    ? "Fetching published versions…"
-                    : "Choose a version"}
-                </option>
-                {versions.data?.versions.map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Core / loader build
-              <select
-                value={loader}
-                onChange={(e) => setLoader(e.target.value)}
-              >
-                <option value="">Latest compatible build</option>
-                {loaders.data?.versions.map((v, i) => (
-                  <option key={`${v}-${i}`} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <ErrorBox
-            error={versions.error || loaders.error}
-            retry={() => {
-              void versions.refresh();
-              void loaders.refresh();
-            }}
-          />
-          {family === "mods" && (
-            <label>
-              Modrinth modpack (optional)
-              <input
-                value={modpack}
-                onChange={(e) => setModpack(e.target.value)}
-                placeholder="Project ID or slug, e.g. fabulously-optimized"
-              />
-              <small>
-                The node resolves the pack for this Minecraft version and
-                loader.
-              </small>
-            </label>
-          )}
-          {family === "hybrid" && (
-            <div className="notice orange">
-              <Info size={16} />
-              <span>
-                Hybrid compatibility is experimental. Verify each mod and plugin
-                against your exact Arclight build.
-              </span>
+                </label>
+              )}
+              {family === "hybrid" && (
+                <div className="notice orange">
+                  <Info size={16} />
+                  <span>
+                    {tr(
+                      "Hybrid compatibility is experimental. Verify each mod and plugin against your exact Arclight build.",
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
-      {step === 1 && (
-        <div className="form-stack">
-          <div className="form-grid">
-            <label>
-              Server name
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your next great adventure"
-                maxLength={80}
-                required
-              />
-            </label>
-            <label>
-              Host node
-              <select value={node} onChange={(e) => setNode(e.target.value)}>
-                {nodes.data?.nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.name}
-                  </option>
+          {step === 1 && (
+            <div className="form-stack">
+              <div className="form-grid">
+                <label>
+                  {tr("Server name")}
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={tr("Your next great adventure")}
+                    maxLength={80}
+                    required
+                  />
+                </label>
+                <label>
+                  {tr("Host node")}
+                  <Select
+                    label={tr("Host node")}
+                    value={node}
+                    onValueChange={setNode}
+                    options={(nodes.data?.nodes || []).map((node) => ({
+                      value: node.id,
+                      label: node.name,
+                    }))}
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <div className="resource-slider">
+                  <div>
+                    <span>
+                      <Server size={12} /> {tr("Memory limit")}
+                    </span>
+                    <strong>
+                      {memory / 1024} {tr("GiB")}
+                    </strong>
+                  </div>
+                  <input
+                    aria-label={tr("Memory limit")}
+                    type="range"
+                    min="1024"
+                    max="16384"
+                    step="512"
+                    value={memory}
+                    onChange={(e) => setMemory(Number(e.target.value))}
+                  />
+                </div>
+                <div className="resource-slider">
+                  <div>
+                    <span>
+                      <Cpu size={12} /> {tr("CPU limit")}
+                    </span>
+                    <strong>{tr("{{count}} cores", { count: cpu })}</strong>
+                  </div>
+                  <input
+                    aria-label={tr("CPU limit")}
+                    type="range"
+                    min="0.5"
+                    max="8"
+                    step="0.5"
+                    value={cpu}
+                    onChange={(e) => setCpu(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              <div className="form-grid">
+                <label>
+                  {tr("Game port")}
+                  <input
+                    type="number"
+                    min={1024}
+                    max={65535}
+                    value={port}
+                    onChange={(e) => setPort(Number(e.target.value))}
+                  />
+                </label>
+                <label>
+                  {tr("Disk budget (GiB)")}
+                  <input
+                    type="number"
+                    min={1}
+                    max={16384}
+                    value={disk}
+                    onChange={(e) => setDisk(Number(e.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="notice">
+                <Info size={16} />
+                <span>
+                  {tr(
+                    "CPU and memory are hard Docker limits. Disk is a monitored budget. Java is selected automatically for your Minecraft version.",
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+          {step === 2 && (
+            <>
+              <div className="summary-grid">
+                {[
+                  ["Server", name],
+                  ["Blueprint", `${pretty(template)} · ${selectedVersion}`],
+                  ["Memory", `${memory / 1024} ${tr("GiB")}`],
+                  ["CPU", tr("{{count}} cores", { count: cpu })],
+                  ["Game port", String(port)],
+                  ["Disk budget", `${disk} ${tr("GiB")}`],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <span>{tr(label)}</span>
+                    <strong>{value}</strong>
+                  </div>
                 ))}
-              </select>
-            </label>
-          </div>
-          <div className="form-grid">
-            <div className="resource-slider">
-              <div>
-                <span>
-                  <Server size={12} /> Memory limit
-                </span>
-                <strong>{memory / 1024} GiB</strong>
               </div>
-              <input
-                aria-label="Memory limit"
-                type="range"
-                min="1024"
-                max="16384"
-                step="512"
-                value={memory}
-                onChange={(e) => setMemory(Number(e.target.value))}
-              />
-            </div>
-            <div className="resource-slider">
-              <div>
-                <span>
-                  <Cpu size={12} /> CPU limit
-                </span>
-                <strong>{cpu} cores</strong>
+              <div className="form-stack">
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={eula}
+                    onChange={(e) => setEula(e.target.checked)}
+                  />
+                  <span>
+                    {tr("I have read and accept the")}{" "}
+                    <a
+                      href="https://www.minecraft.net/eula"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr("Minecraft End User License Agreement")}
+                    </a>
+                    .
+                  </span>
+                </label>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={start}
+                    onChange={(e) => setStart(e.target.checked)}
+                  />
+                  {tr("Start the server after creating it.")}
+                </label>
+                <div className="notice">
+                  <Box size={16} />
+                  <span>
+                    {tr(
+                      "The first start downloads a Java runtime and the selected core. Progress and any errors appear in the live console.",
+                    )}
+                  </span>
+                </div>
               </div>
-              <input
-                aria-label="CPU limit"
-                type="range"
-                min="0.5"
-                max="8"
-                step="0.5"
-                value={cpu}
-                onChange={(e) => setCpu(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          <div className="form-grid">
-            <label>
-              Game port
-              <input
-                type="number"
-                min={1024}
-                max={65535}
-                value={port}
-                onChange={(e) => setPort(Number(e.target.value))}
-              />
-            </label>
-            <label>
-              Disk budget (GiB)
-              <input
-                type="number"
-                min={1}
-                max={16384}
-                value={disk}
-                onChange={(e) => setDisk(Number(e.target.value))}
-              />
-            </label>
-          </div>
-          <div className="notice">
-            <Info size={16} />
-            <span>
-              CPU and memory are hard Docker limits. Disk is a monitored budget.
-              Java is selected automatically for your Minecraft version.
-            </span>
-          </div>
-        </div>
-      )}
-      {step === 2 && (
-        <>
-          <div className="summary-grid">
-            {[
-              ["Server", name],
-              ["Blueprint", `${pretty(template)} · ${selectedVersion}`],
-              ["Memory", `${memory / 1024} GiB`],
-              ["CPU", `${cpu} cores`],
-              ["Game port", String(port)],
-              ["Disk budget", `${disk} GiB`],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="form-stack">
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={eula}
-                onChange={(e) => setEula(e.target.checked)}
-              />
-              <span>
-                I have read and accept the{" "}
-                <a
-                  href="https://www.minecraft.net/eula"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Minecraft End User License Agreement
-                </a>
-                .
-              </span>
-            </label>
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={start}
-                onChange={(e) => setStart(e.target.checked)}
-              />
-              Start the server after creating it.
-            </label>
-            <div className="notice">
-              <Box size={16} />
-              <span>
-                The first start downloads a Java runtime and the selected core.
-                Progress and any errors appear in the live console.
-              </span>
-            </div>
-          </div>
-        </>
-      )}
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
       <div className="modal-actions">
-        <span>STEP {step + 1} OF 3</span>
+        <span>{tr("STEP {{step}} OF 3", { step: step + 1 })}</span>
         {step > 0 && (
           <Button disabled={busy} onClick={() => setStep(step - 1)}>
             <ArrowLeft size={14} />
-            Back
+            {tr("Back")}
           </Button>
         )}
         {step < 2 ? (
@@ -364,7 +392,7 @@ export function NewServer({
             }
             onClick={() => setStep(step + 1)}
           >
-            Continue
+            {tr("Continue")}
             <ArrowRight size={14} />
           </Button>
         ) : (
@@ -375,7 +403,7 @@ export function NewServer({
             onClick={() => void create()}
           >
             <Rocket size={15} />
-            Create server
+            {tr("Create server")}
           </Button>
         )}
       </div>

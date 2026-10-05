@@ -6,8 +6,14 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { motion, useIsPresent } from "motion/react";
 import { AlertCircle, Check, Copy, LoaderCircle, X } from "lucide-react";
 import { publicFile } from "./assets";
+import { usePreferences } from "./Preferences";
+import i18n, { locale, messageText, useTranslation } from "./i18n";
+export { Select } from "./Select";
+export { AnimatePresence } from "motion/react";
 
 export function Logo({ small = false }: { small?: boolean }) {
   return (
@@ -57,39 +63,96 @@ export function Modal({
   wide?: boolean;
   initialFocus?: string;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  useEffect(() => {
-    const element = ref.current;
-    element?.showModal();
-    if (initialFocus)
-      element?.querySelector<HTMLElement>(initialFocus)?.focus();
-    return () => element?.close();
-  }, [initialFocus]);
+  const ref = useRef<HTMLDivElement>(null);
+  const returnFocus = useRef(
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
+  const descriptionId = useId();
+  const present = useIsPresent();
+  const { motion: animated } = usePreferences();
+  const { t } = useTranslation();
   return (
-    <dialog
-      ref={ref}
-      className={`modal ${wide ? "wide" : ""}`}
-      aria-labelledby={titleId}
-      onCancel={onClose}
+    <Dialog.Root
+      open={present}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <div className="modal-inner">
-        <header>
-          <div>
-            <h2 id={titleId}>{title}</h2>
-            {subtitle && <p>{subtitle}</p>}
-          </div>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label="Close dialog"
+      <Dialog.Portal forceMount>
+        <Dialog.Overlay asChild forceMount>
+          <motion.div
+            className="modal-overlay"
+            initial={animated ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: animated ? 0.18 : 0 }}
           >
-            <X size={19} />
-          </button>
-        </header>
-        {children}
-      </div>
-    </dialog>
+            <Dialog.Content
+              asChild
+              forceMount
+              onCloseAutoFocus={(event) => {
+                if (returnFocus.current?.isConnected) {
+                  event.preventDefault();
+                  returnFocus.current.focus({ preventScroll: true });
+                }
+              }}
+              onOpenAutoFocus={(event) => {
+                if (initialFocus) {
+                  const target =
+                    ref.current?.querySelector<HTMLElement>(initialFocus);
+                  if (target) {
+                    event.preventDefault();
+                    target.focus();
+                  }
+                }
+              }}
+              aria-describedby={subtitle ? descriptionId : undefined}
+            >
+              <motion.div
+                ref={ref}
+                className={`modal ${wide ? "wide" : ""}`}
+                initial={animated ? { opacity: 0, y: 24, scale: 0.97 } : false}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{
+                  opacity: 0,
+                  y: animated ? 12 : 0,
+                  scale: animated ? 0.98 : 1,
+                }}
+                transition={{
+                  duration: animated ? 0.24 : 0,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                <div className="modal-inner">
+                  <header>
+                    <div>
+                      <Dialog.Title asChild>
+                        <h2>{t(title)}</h2>
+                      </Dialog.Title>
+                      {subtitle && (
+                        <Dialog.Description id={descriptionId} asChild>
+                          <p>{subtitle}</p>
+                        </Dialog.Description>
+                      )}
+                    </div>
+                    <button
+                      className="icon-button"
+                      onClick={onClose}
+                      aria-label={t("Close dialog")}
+                    >
+                      <X size={19} />
+                    </button>
+                  </header>
+                  {children}
+                </div>
+              </motion.div>
+            </Dialog.Content>
+          </motion.div>
+        </Dialog.Overlay>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 export function ErrorBox({
@@ -99,19 +162,23 @@ export function ErrorBox({
   error: Error | string | null;
   retry?: () => void;
 }) {
+  const { t } = useTranslation();
   return error ? (
     <div className="error-box" role="alert">
       <AlertCircle size={17} />
-      <span>{typeof error === "string" ? error : error.message}</span>
-      {retry && <Button onClick={retry}>Retry</Button>}
+      <span>
+        {messageText(typeof error === "string" ? error : error.message)}
+      </span>
+      {retry && <Button onClick={retry}>{t("Retry")}</Button>}
     </div>
   ) : null;
 }
 export function Loading() {
+  const { t } = useTranslation();
   return (
     <div className="loading">
       <LoaderCircle className="spin" size={22} />
-      <span>Loading your workspace…</span>
+      <span>{t("Loading your workspace…")}</span>
     </div>
   );
 }
@@ -126,20 +193,22 @@ export function Empty({
   description: string;
   action?: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="empty">
       <span className="empty-icon">{icon}</span>
-      <h3>{title}</h3>
-      <p>{description}</p>
+      <h3>{t(title)}</h3>
+      <p>{t(description)}</p>
       {action}
     </div>
   );
 }
 export function Badge({ state }: { state: string }) {
+  const { t } = useTranslation();
   return (
     <span className={`status ${state}`}>
       <span className="status-dot" />
-      {state.charAt(0).toUpperCase() + state.slice(1)}
+      {t(state.charAt(0).toUpperCase() + state.slice(1))}
     </span>
   );
 }
@@ -152,10 +221,11 @@ export function Progress({
   color?: string;
   label?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <progress
       className={`progress ${color}`}
-      aria-label={label}
+      aria-label={t(label)}
       value={Math.max(0, Math.min(100, value))}
       max={100}
     />
@@ -172,6 +242,7 @@ export function CopyButton({
 }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(false);
+  const { t: translate } = useTranslation();
   useEffect(() => {
     if (copied) {
       const t = setTimeout(() => setCopied(false), 1800);
@@ -183,12 +254,12 @@ export function CopyButton({
       className={showLabel ? "button primary" : "icon-button"}
       title={
         error
-          ? "Clipboard requires HTTPS or localhost"
+          ? translate("Clipboard requires HTTPS or localhost")
           : copied
-            ? "Copied"
-            : label
+            ? translate("Copied")
+            : translate(label)
       }
-      aria-label={copied ? "Copied" : label}
+      aria-label={copied ? translate("Copied") : translate(label)}
       onClick={async (event) => {
         event.stopPropagation();
         try {
@@ -201,27 +272,34 @@ export function CopyButton({
       }}
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}
-      {showLabel && <span>{copied ? "Copied" : label}</span>}
+      {showLabel && (
+        <span>{copied ? translate("Copied") : translate(label)}</span>
+      )}
     </button>
   );
 }
 export function bytes(value: number, decimals = 1) {
-  if (value < 1024) return `${value} B`;
-  const unit = Math.min(3, Math.floor(Math.log(value) / Math.log(1024)));
-  return `${(value / 1024 ** unit).toFixed(decimals)} ${["B", "KiB", "MiB", "GiB"][unit]}`;
+  const unit =
+    value < 1024
+      ? 0
+      : Math.min(3, Math.floor(Math.log(value) / Math.log(1024)));
+  const amount = new Intl.NumberFormat(locale(), {
+    maximumFractionDigits: unit ? decimals : 0,
+  }).format(value / 1024 ** unit);
+  return `${amount} ${i18n.t(["B", "KiB", "MiB", "GiB"][unit])}`;
 }
 export function ago(timestamp: number) {
   const seconds = Math.max(0, Math.floor(Date.now() / 1000) - timestamp);
-  return seconds < 60
-    ? "just now"
-    : seconds < 3600
-      ? `${Math.floor(seconds / 60)}m ago`
-      : seconds < 86400
-        ? `${Math.floor(seconds / 3600)}h ago`
-        : `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 60) return i18n.t("just now");
+  const unit = seconds < 3600 ? "minute" : seconds < 86400 ? "hour" : "day";
+  const divisor = unit === "minute" ? 60 : unit === "hour" ? 3600 : 86400;
+  return new Intl.RelativeTimeFormat(locale(), { style: "short" }).format(
+    -Math.floor(seconds / divisor),
+    unit,
+  );
 }
 export function date(timestamp: number) {
-  return new Date(timestamp * 1000).toLocaleString(undefined, {
+  return new Date(timestamp * 1000).toLocaleString(locale(), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

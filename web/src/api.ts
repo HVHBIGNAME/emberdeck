@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { demoReply } from "./demo";
+import i18n from "./i18n";
 
 export const hostedDemo = import.meta.env.VITE_DEMO_ONLY === "true";
 export const demo = hostedDemo || window.location.pathname.startsWith("/demo");
@@ -33,8 +34,13 @@ export async function api<T>(
   if (!response.headers.get("content-type")?.includes("application/json")) {
     throw new ApiError(
       response.status >= 500
-        ? `The panel or its access tunnel is unavailable (HTTP ${response.status}). Retry after it reconnects.`
-        : `Unexpected panel response (HTTP ${response.status}).`,
+        ? i18n.t(
+            "The panel or its access tunnel is unavailable (HTTP {{status}}). Retry after it reconnects.",
+            { status: response.status },
+          )
+        : i18n.t("Unexpected panel response (HTTP {{status}}).", {
+            status: response.status,
+          }),
       response.status,
     );
   }
@@ -43,7 +49,7 @@ export async function api<T>(
     const message =
       typeof data === "object" && data !== null && "error" in data
         ? String(data.error)
-        : `Request failed (${response.status})`;
+        : i18n.t("Request failed ({{status}})", { status: response.status });
     throw new ApiError(message, response.status);
   }
   return data as T;

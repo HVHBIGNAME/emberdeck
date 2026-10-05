@@ -26,6 +26,7 @@ One Rust binary. An embedded web panel. A Linux agent. A real CLI.
 
 - **A world in a few clicks.** Paper, Purpur, Folia, Vanilla, Fabric, Forge, NeoForge, Quilt, and experimental Arclight blueprints. Published versions, automatic Java selection, and Modrinth modpacks.
 - **A proper control room.** Start, stop, restart, console commands, MOTD, player counts, CPU / memory / disk observations, and metric history.
+- **A workspace that feels like you.** Light, dark and system themes; English and Russian; adjustable text size; animated Minecraft backgrounds; keyboard-friendly selectors and an optional outline cursor. Motion can be switched off and respects your system's reduced-motion preference.
 - **Files, your way.** A web editor with conflict detection, uploads and downloads, plus native, server-scoped SFTP. Toggle add-ons by renaming `.jar` ↔ `.jar.disabled`.
 - **A library that knows your server.** Modrinth results filtered by game version and loader, required dependency resolution, publisher checksum verification, and GitHub release assets.
 - **Automations with context.** Cron and interval schedules, player join / leave events, an empty-world trigger, exact-player filters, and “only when empty” conditions.
@@ -76,6 +77,14 @@ emberdeck cli backup SERVER_ID --destination local
 
 Just exploring? Run **`emberdeck demo`** — a read-only sample workspace, without Docker or credentials. The panel and CLI can also be built on Windows; the server agent is Linux-first.
 
+## Make yourself at home
+
+Open **Settings** from the sidebar or the sliders button in the top bar. Appearance preferences apply immediately and are stored for this browser and panel address. The overview is the default entry point; installation help is under **Settings → Help & deployment**.
+
+![Personal preferences: themes, accents, motion, language and Minecraft backgrounds](docs/media/settings.png)
+
+[Personalization guide →](docs/ui-preferences.md) · [Light theme](docs/media/overview-light.png) · [Русский интерфейс](docs/media/overview-ru.png)
+
 ## One binary, clear responsibilities
 
 ```text
@@ -96,7 +105,7 @@ The panel has no Docker socket. Each node has its own management token. Game con
 
 ## Where this release stands
 
-**v0.2 is an early release.** The implemented paths are usable, but this is not a production-hardening claim.
+**v0.3 is an early release.** The implemented paths are usable, but this is not a production-hardening claim.
 
 Static findings are review signals, not an antivirus verdict. Isolated diagnosis covers reproducible **startup** failures; it never silently changes the original. An optional fix requires a healthy complementary trial, unchanged JAR hashes, and a backup. Player events currently use polling. Cloud backups and AI need your own provider configuration.
 

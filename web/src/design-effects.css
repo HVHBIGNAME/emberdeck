@@ -1,0 +1,278 @@
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+.scene {
+  position: absolute;
+  inset: 0;
+}
+.scene-glow {
+  position: absolute;
+  width: min(45rem, 65vw);
+  height: min(40rem, 70vh);
+  border-radius: 45%;
+  filter: blur(75px);
+  opacity: calc(var(--scene-strength) * 0.5);
+  transform: translate3d(0, 0, 0);
+  animation: ambient-drift 28s ease-in-out infinite alternate;
+}
+.glow-one {
+  background: var(--scene-a);
+  left: 10%;
+  top: -20%;
+}
+.glow-two {
+  background: var(--scene-b);
+  right: -10%;
+  top: 20%;
+  animation-delay: -9s;
+  animation-duration: 34s;
+}
+.glow-three {
+  background: var(--scene-c);
+  left: 20%;
+  bottom: -30%;
+  animation-delay: -17s;
+  animation-duration: 40s;
+}
+.scene-grid {
+  position: absolute;
+  inset: 0;
+  opacity: calc(var(--scene-strength) * 0.09);
+  background-image:
+    linear-gradient(var(--dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(transparent, #000 85%);
+}
+.scene-particles {
+  position: absolute;
+  inset: 0;
+  opacity: calc(var(--scene-strength) * 0.5);
+}
+.scene-particles i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--scene-a);
+  animation: firefly 16s ease-in-out infinite;
+}
+.scene-particles i:nth-child(3n) {
+  width: 5px;
+  height: 5px;
+  background: var(--scene-b);
+  animation-duration: 23s;
+}
+.scene-overworld {
+  --scene-a: #83b69c;
+  --scene-b: #b7c3a0;
+  --scene-c: #6a9a98;
+}
+.scene-nether {
+  --scene-a: #a9796f;
+  --scene-b: #d09b65;
+  --scene-c: #8e687d;
+}
+.scene-end {
+  --scene-a: #9c88c7;
+  --scene-b: #c1b59b;
+  --scene-c: #6d8ba6;
+}
+.landscape {
+  position: absolute;
+  width: 100%;
+  height: min(42rem, 58vh);
+  bottom: 0;
+  opacity: calc(var(--scene-strength) * 0.3);
+}
+.landscape-far {
+  fill: var(--scene-a);
+}
+.landscape-near {
+  fill: var(--scene-c);
+}
+.pixel-clouds {
+  fill: var(--scene-b);
+  opacity: 0.7;
+  animation: cloud-drift 65s ease-in-out infinite alternate;
+}
+.floating-islands {
+  fill: var(--scene-b);
+  animation: island-float 13s ease-in-out infinite alternate;
+}
+.scene-nether .scene-particles i {
+  border-radius: 50%;
+  animation-name: ember-rise;
+}
+.scene-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: calc(var(--scene-strength) * 0.65);
+}
+.focus-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  overflow: clip;
+}
+.cursor-outline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 1px solid var(--orange);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    0 0 24px var(--accent-soft);
+  background: var(--accent-soft);
+  pointer-events: none;
+}
+.cursor-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 6px var(--accent-line);
+  pointer-events: none;
+}
+@media (pointer: fine) and (hover: hover) {
+  html[data-cursor="custom"],
+  html[data-cursor="custom"] * {
+    cursor: none !important;
+  }
+}
+.login-orbit {
+  animation: island-float 10s ease-in-out infinite alternate;
+}
+.server-identity > img {
+  transition:
+    transform 0.45s var(--ease),
+    box-shadow 0.45s;
+}
+.server-identity:hover > img {
+  transform: rotate(-4deg) scale(1.06);
+  box-shadow: 0 8px 20px var(--accent-soft);
+}
+.preview-bars i {
+  transform-origin: bottom;
+  animation: bar-reveal 0.8s var(--ease) both;
+}
+.preview-bars i:nth-child(2n) {
+  animation-delay: 0.1s;
+}
+.preview-bars i:nth-child(3n) {
+  animation-delay: 0.2s;
+}
+.status.online .status-dot,
+.live-label .dot {
+  box-shadow: 0 0 0 0 var(--green-line);
+  animation: status-breathe 3s ease-in-out infinite;
+}
+html[data-paused="true"] .scene *,
+html[data-paused="true"] .status-dot,
+html[data-paused="true"] .login-orbit {
+  animation-play-state: paused;
+}
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(-4%, -3%, 0) rotate(-7deg);
+  }
+  to {
+    transform: translate3d(9%, 8%, 0) rotate(12deg);
+  }
+}
+@keyframes firefly {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translate3d(0, 5px, 0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate3d(20px, -28px, 0);
+  }
+}
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 55px, 0);
+  }
+  30%,
+  70% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(25px, -100px, 0);
+  }
+}
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-20px);
+  }
+  to {
+    transform: translateX(65px);
+  }
+}
+@keyframes island-float {
+  from {
+    transform: translateY(0) rotate(-2deg);
+  }
+  to {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+@keyframes bar-reveal {
+  from {
+    transform: scaleY(0.15);
+    opacity: 0.3;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes status-breathe {
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion="off"]
+  :is(
+    .button:hover,
+    .button:active,
+    .blueprint-card:hover,
+    .preference-choice:hover,
+    .assistant-prompts button:hover,
+    .server-identity:hover > img
+  ) {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .focus-cursor {
+    display: none;
+  }
+}

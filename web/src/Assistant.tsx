@@ -5,6 +5,7 @@ import { useWorkspace } from "./context";
 import type { AssistantReply } from "./types";
 import { Button, ErrorBox, Modal } from "./ui";
 import { ServerSelect } from "./operations";
+import { useTranslation } from "./i18n";
 
 export function Assistant({
   initialServer,
@@ -15,6 +16,7 @@ export function Assistant({
   configured: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { servers, runAction, can } = useWorkspace();
   const [id, setId] = useState(initialServer || servers[0]?.id || "");
   const [prompt, setPrompt] = useState("");
@@ -32,7 +34,7 @@ export function Assistant({
   return (
     <Modal
       title="Meet Ember."
-      subtitle="A little help, right where you need it."
+      subtitle={t("A little help, right where you need it.")}
       onClose={onClose}
       wide
     >
@@ -43,10 +45,11 @@ export function Assistant({
             <span className="ember-avatar">
               <Sparkles size={22} />
             </span>
-            <h3>What are we building today?</h3>
+            <h3>{t("What are we building today?")}</h3>
             <p>
-              I can read your server's logs, find compatible packages, and
-              propose a next step. Every change stays in your hands.
+              {t(
+                "I can read your server's logs, find compatible packages, and propose a next step. Every change stays in your hands.",
+              )}
             </p>
             <div className="assistant-prompts">
               {[
@@ -54,8 +57,8 @@ export function Assistant({
                 "Find a permissions plugin for this server",
                 "What should I check if the server lags?",
               ].map((text) => (
-                <button key={text} onClick={() => setPrompt(text)}>
-                  {text}
+                <button key={text} onClick={() => setPrompt(t(text))}>
+                  {t(text)}
                   <ArrowUpRight size={11} />
                 </button>
               ))}
@@ -66,12 +69,15 @@ export function Assistant({
           <div className="notice">
             <Info size={17} />
             <span>
-              {demo
-                ? "This is the demo assistant preview. Connect an OpenAI-compatible provider in your own workspace to ask questions."
-                : "Add your provider to /etc/emberdeck/panel.toml: ai_base_url, ai_model and ai_api_key (or EMBER_AI_API_KEY). Restart emberdeck-panel to connect."}
+              {t(
+                demo
+                  ? "This is the demo assistant preview. Connect an OpenAI-compatible provider in your own workspace to ask questions."
+                  : "Add your provider to /etc/emberdeck/panel.toml: ai_base_url, ai_model and ai_api_key (or EMBER_AI_API_KEY). Restart emberdeck-panel to connect.",
+              )}
               <br />
-              Only the selected server's context and redacted recent logs are
-              sent to your provider.
+              {t(
+                "Only the selected server's context and redacted recent logs are sent to your provider.",
+              )}
             </span>
           </div>
         )}
@@ -84,7 +90,7 @@ export function Assistant({
                 ) : (
                   <Bot size={13} />
                 )}
-                {message.role === "assistant" ? "EMBER" : "YOU"}
+                {message.role === "assistant" ? "EMBER" : t("YOU")}
               </span>
               {message.text}
             </div>
@@ -108,10 +114,10 @@ export function Assistant({
                     {applied.includes(key) ? (
                       <>
                         <Check size={13} />
-                        Confirmed
+                        {t("Confirmed")}
                       </>
                     ) : (
-                      "Confirm this change"
+                      t("Confirm this change")
                     )}
                   </Button>
                 </div>
@@ -160,10 +166,10 @@ export function Assistant({
           }}
         >
           <textarea
-            aria-label="Message to Ember"
+            aria-label={t("Message to Ember")}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ask about this server…"
+            placeholder={t("Ask about this server…")}
             maxLength={4000}
           />
           <Button
@@ -175,7 +181,7 @@ export function Assistant({
             type="submit"
           >
             <Send size={14} />
-            Ask Ember
+            {t("Ask Ember")}
           </Button>
         </form>
       </div>

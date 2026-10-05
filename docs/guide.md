@@ -47,7 +47,7 @@ sudo env \
   bash install.sh
 ```
 
-Other installer options: `EMBER_VERSION=v0.2.0`, `EMBER_MODE=panel|agent|all`, and `EMBER_BINARY=/absolute/path/to/emberdeck` for a locally built release. Access profiles also have command-line flags; run `bash install.sh --help` for the complete list.
+Other installer options: `EMBER_VERSION=v0.3.0`, `EMBER_MODE=panel|agent|all`, and `EMBER_BINARY=/absolute/path/to/emberdeck` for a locally built release. Access profiles also have command-line flags; run `bash install.sh --help` for the complete list.
 
 For an existing installation, update the TOML configuration and restart the affected service. Initial node metadata is persisted in the panel database; manage additional nodes in **Nodes**. Use distinct panel, agent, SFTP and game ports.
 
@@ -87,6 +87,8 @@ node.example.com {
 Remote node registration requires HTTPS. HTTP is accepted only for loopback addresses, useful for SSH tunnels. Use a publicly trusted certificate or install your private CA in the panel host's trust store.
 
 ## Files and SFTP
+
+For themes, language, interface size, motion, cursor and background controls, see [personal preferences](ui-preferences.md). Installation help is available under **Settings → Help & deployment**.
 
 The Files tab supports browsing, text editing, renaming, empty-folder deletion, uploads and downloads. Text saves include an expected SHA-256 hash to detect concurrent changes. Web transfers are limited to **32 MiB**; use SFTP for larger files.
 

@@ -1,21 +1,27 @@
-# v0.2 verification
+# v0.3 verification
 
-Verification date: **2026-10-03**. These results describe the tested paths, rather than a production-hardening certification. The game-operation baseline below was established on v0.1 on 2026-10-02; v0.2 adds the access and upgrade checks.
+Latest local verification: **2026-10-05**. The v0.3 checks cover the redesigned interface and native Windows build. The Linux game-operation baseline was established on v0.1 on 2026-10-02, and the access/upgrade baseline on v0.2 on 2026-10-03. Current cross-platform CI and release build results are linked under Actions and Releases below.
 
 ## Automated checks
 
 | Check | Result |
 | --- | --- |
 | Windows Rust tests | 26 passed |
-| Linux x86-64 musl release tests | 27 passed, including capability-root symlink isolation |
+| Linux x86-64 musl release tests (v0.2 baseline) | 27 passed, including capability-root symlink isolation |
 | Rust Clippy, all targets, warnings denied | Passed locally |
 | TypeScript and Vite production build | Passed |
-| Chromium end-to-end tests against the production bundle | 12 passed |
+| Chromium end-to-end tests against the production bundle | 30 passed |
+| Native Windows v0.3 release executable | Built and launched from a separate working directory |
+| Embedded UI under the native Content Security Policy | Russian, light theme, background and mobile login layout passed |
 | Bootstrap and embedded access installer Bash syntax | Passed |
 
-Browser coverage includes navigation, mobile layout, keyboard search and chart inspection, EULA consent, read-only demonstration controls, preserving the file editor after a successful save, installation profiles before login, command copying/quoting, port and URL validation, and readable non-JSON gateway errors. Fixture and error-path tests use intercepted API responses; the Linux checks below use the real native panel.
+Browser coverage includes navigation, keyboard search and chart inspection, EULA consent, read-only demonstration controls, preserving the file editor after a successful save, installation profiles before login, command copying/quoting, port and URL validation, and readable non-JSON gateway errors. Fixture and error-path tests use intercepted API responses; the Linux checks below use the real native panel.
 
-## HTTPS access and upgrades
+The new coverage exercises light/dark layouts at **2560, 390 and 320 pixels**, including large text and Russian page headings; checks 14 views per layout; verifies keyboard selectors, nested Escape handling and focus restoration; switches system theme and reduced motion live; checks the outline cursor and touch input; verifies cross-tab preference synchronization, reset, invalid settings and blocked storage; uploads/resizes/removes a local background; and confirms the library remains usable after selecting a Vanilla server. The default entry point is the overview, with installation help in Settings.
+
+The native Windows smoke check served embedded assets from a separate working directory, applied the real CSP and exercised theme/background changes. Its login-layout check used a deliberate 401 fixture. No JavaScript or unexpected resource errors were observed. Release assets remain single executables; the larger frontend is split into shared React, motion, controls and i18n chunks, each below Vite's default warning threshold.
+
+## HTTPS access and upgrades — v0.2 baseline
 
 - Installed the native v0.2 binary over the existing systemd deployment. Existing owner/node credentials and listener ports were preserved. An upgrade without an access flag kept the same running tunnel process and public URL.
 - Provisioned a real outbound quick tunnel using checksum-verified cloudflared 2026.9.3. The public HTTPS `/healthz` response matched the local installation identifier.
@@ -44,9 +50,9 @@ The integration run exposed and fixed two provider/platform issues: the current 
 
 ## Static-analysis follow-up
 
-Aislop 0.13.1 reported **59/100** on an isolated snapshot of the release's tracked source files, with **zero errors, zero automatically fixable findings, and zero lint, format or security findings**. Its remaining 27 warnings comprise:
+Aislop 0.13.1 reported **58/100** on the full application-source scan, with **zero errors, zero automatically fixable findings, and zero lint, format or security findings**. Its remaining 30 warnings comprise:
 
-- 12 maintainability warnings for long UI components/files and repeated blocks. This includes similar installation-profile data records; the older large components remain refactoring work.
+- 15 maintainability warnings for long UI components/files, demo fixtures and repeated blocks. Navigation and operation notifications are now shared modules; larger file, server and access-management components remain refactoring work.
 - 15 fixed-URL warnings. The cited URLs are intentional upstream API endpoints or test/demo origins, rather than deployment credentials or private hosts.
 
 No rule was disabled or reconfigured to obtain this result. Rust, browser and live-node results do not substitute for resolving this maintainability work or for an independent security review.

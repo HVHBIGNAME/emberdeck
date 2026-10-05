@@ -1,0 +1,229 @@
+:root {
+  --ui-scale: 1;
+  --sidebar-width: 15.5rem;
+  --radius: 1.35rem;
+  --duration: 0.24s;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  font-size: calc(clamp(15px, 0.78vw, 17px) * var(--ui-scale));
+  line-height: 1.6;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color: var(--text);
+  background: var(--bg);
+}
+:root,
+:root[data-theme="dark"] {
+  --bg: #0e131b;
+  --sidebar: #101620f5;
+  --panel: #171f2aee;
+  --panel-raised: #202a38;
+  --surface-quiet: #1c2735;
+  --field: #101923;
+  --border: #2c394b;
+  --border-strong: #4a5d75;
+  --text: #e8eef7;
+  --muted: #a0aec2;
+  --dim: #8494ac;
+  --orange: #f0b582;
+  --accent-fill: #efb07e;
+  --accent-ink: #291c13;
+  --accent-soft: #c3914a14;
+  --accent-line: #bd906943;
+  --green: #8bcbb0;
+  --green-soft: #1c342d;
+  --green-line: #375a4b;
+  --blue: #9fc6ed;
+  --blue-soft: #1c2e45;
+  --blue-line: #3c5978;
+  --red: #f0a5ae;
+  --red-soft: #392630;
+  --red-line: #74434f;
+  --purple: #c7b0ec;
+  --purple-soft: #30293f;
+  --purple-line: #594571;
+  --shadow: 0 16px 50px #00000026;
+  --shadow-raised: 0 24px 80px #00000066;
+  --scrim: #060b13a8;
+  --glass: #101722d9;
+  --console: #09121c;
+  --console-text: #bacbdc;
+  --scene-a: #527b79;
+  --scene-b: #ac7c69;
+  --scene-c: #6c658c;
+}
+:root[data-theme="light"] {
+  --bg: #f3f6f7;
+  --sidebar: #fafcfdf5;
+  --panel: #fffffff0;
+  --panel-raised: #ffffff;
+  --surface-quiet: #edf2f6;
+  --field: #f7f9fc;
+  --border: #d9e2eb;
+  --border-strong: #a7b8c9;
+  --text: #233447;
+  --muted: #52657b;
+  --dim: #677c91;
+  --orange: #a05a2d;
+  --accent-fill: #a05a2d;
+  --accent-ink: #ffffff;
+  --accent-soft: #b97b3610;
+  --accent-line: #b2825845;
+  --green: #27785a;
+  --green-soft: #e6f2eb;
+  --green-line: #aed3bd;
+  --blue: #306d9d;
+  --blue-soft: #e7f0f9;
+  --blue-line: #b3cce3;
+  --red: #a14254;
+  --red-soft: #faedf0;
+  --red-line: #e4b6c0;
+  --purple: #7958a4;
+  --purple-soft: #f0eafa;
+  --purple-line: #ccb8e5;
+  --shadow: 0 10px 36px #334d6410;
+  --shadow-raised: 0 24px 70px #28456224;
+  --scrim: #182d476b;
+  --glass: #f9fcffde;
+  --scene-a: #a6cdbd;
+  --scene-b: #d9b491;
+  --scene-c: #b0bce0;
+}
+:root[data-accent="moss"] {
+  --orange: #8acead;
+  --accent-fill: #8acead;
+  --accent-ink: #102b20;
+  --accent-soft: #62b68816;
+  --accent-line: #6ab59055;
+}
+:root[data-accent="diamond"] {
+  --orange: #99cbf5;
+  --accent-fill: #99cbf5;
+  --accent-ink: #11293d;
+  --accent-soft: #72b1e616;
+  --accent-line: #7db9e955;
+}
+:root[data-accent="amethyst"] {
+  --orange: #c9b2ef;
+  --accent-fill: #c9b2ef;
+  --accent-ink: #291d3d;
+  --accent-soft: #aa85d916;
+  --accent-line: #b49adc55;
+}
+:root[data-theme="light"][data-accent="moss"] {
+  --orange: #266f50;
+  --accent-fill: #266f50;
+  --accent-ink: #fff;
+  --accent-soft: #69a78212;
+  --accent-line: #508e6544;
+}
+:root[data-theme="light"][data-accent="diamond"] {
+  --orange: #216d9f;
+  --accent-fill: #216d9f;
+  --accent-ink: #fff;
+  --accent-soft: #7ab7e01a;
+  --accent-line: #659abc55;
+}
+:root[data-theme="light"][data-accent="amethyst"] {
+  --orange: #7b52a5;
+  --accent-fill: #7b52a5;
+  --accent-ink: #fff;
+  --accent-soft: #bd9ce81a;
+  --accent-line: #a084bb55;
+}
+:root[data-density="compact"] {
+  --ui-scale: 0.92;
+}
+:root[data-density="large"] {
+  --ui-scale: 1.1;
+}
+body {
+  color: var(--text);
+  background: transparent;
+}
+#root {
+  min-height: 100dvh;
+  isolation: isolate;
+}
+::selection {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+h1 {
+  font-size: clamp(1.9rem, 2.3vw, 2.5rem);
+  line-height: 1.22;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
+h2 {
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 580;
+}
+small {
+  font-size: 0.78rem;
+}
+code {
+  font-size: 0.8rem;
+}
+:is(
+    .main-content,
+    .modal,
+    .install-screen,
+    .preferences-standalone,
+    .login-content
+  )
+  p {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+:is(
+    .main-content,
+    .modal,
+    .install-screen,
+    .preferences-standalone,
+    .login-content
+  )
+  label {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+:is(
+    .main-content,
+    .modal,
+    .install-screen,
+    .preferences-standalone,
+    .login-content
+  )
+  label
+  > small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.eyebrow {
+  color: var(--dim);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.8rem;
+}
+.quiet {
+  font-size: 0.86rem;
+}
+.orange-text,
+.tiny-mark {
+  color: var(--orange);
+}
+.green-text {
+  color: var(--green) !important;
+}
+.blue-text {
+  color: var(--blue);
+}

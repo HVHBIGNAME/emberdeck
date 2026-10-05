@@ -1,29 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  Activity,
-  Archive,
   ArrowUpRight,
   Box,
   Check,
   ChevronRight,
   Command,
   ExternalLink,
-  Download,
-  LayoutDashboard,
   LogOut,
   Menu,
-  Network,
   Plus,
-  Puzzle,
   Search,
   Server,
-  ShieldCheck,
   Sparkles,
-  Workflow,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import { ApiError, demo, hostedDemo, post, useApi } from "./api";
-import type { Identity, Job, Overview } from "./types";
+import type { Identity, Overview } from "./types";
 import { WorkspaceContext, type Workspace } from "./context";
 import { Button, ErrorBox, Loading, Logo, Modal } from "./ui";
 import Dashboard, { ActivityList, ServerCard } from "./dashboard";
@@ -35,81 +29,21 @@ import { AutomationsPage, BackupsPage } from "./operations";
 import { Assistant } from "./Assistant";
 import { InstallPage } from "./InstallPage";
 import { Login } from "./Login";
-
-const mainLinks = [
-  ["overview", "Overview", LayoutDashboard],
-  ["servers", "Servers", Server],
-  ["library", "Library", Puzzle],
-  ["blueprints", "Blueprints", Box],
-  ["automations", "Automations", Workflow],
-  ["backups", "Backups", Archive],
-] as const;
-const workspaceLinks = [
-  ["install", "Install & connect", Download],
-  ["nodes", "Nodes", Network],
-  ["access", "Access & tokens", ShieldCheck],
-  ["activity", "Activity", Activity],
-] as const;
-
-function JobDock({
-  serverId,
-  onClose,
-}: {
-  serverId: string;
-  onClose: () => void;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const jobs = useApi<{ jobs: Job[] }>(`/api/servers/${serverId}/jobs`, 2000);
-  const active = jobs.data?.jobs.filter((j) => j.state === "running") || [];
-  return (
-    <aside className={`job-dock ${expanded ? "expanded" : ""}`}>
-      <header>
-        <button onClick={() => setExpanded(!expanded)}>
-          <Activity size={15} /> Operations{" "}
-          {active.length > 0 && (
-            <span className="count-badge">{active.length}</span>
-          )}
-        </button>
-        <button
-          className="icon-button"
-          onClick={onClose}
-          aria-label="Close operations"
-        >
-          <X size={15} />
-        </button>
-      </header>
-      {expanded && (
-        <div className="job-list">
-          <ErrorBox error={jobs.error} />
-          {jobs.data?.jobs.slice(0, 6).map((job) => (
-            <div key={job.id} className={`job ${job.state}`}>
-              <div>
-                <strong>
-                  {job.kind.charAt(0).toUpperCase() + job.kind.slice(1)}
-                </strong>
-                <span>
-                  {job.state === "completed" ? <Check size={14} /> : job.state}
-                </span>
-              </div>
-              <p>{job.error || job.progress}</p>
-              {job.result && (
-                <details>
-                  <summary>Result details</summary>
-                  <pre>{JSON.stringify(job.result, null, 2)}</pre>
-                </details>
-              )}
-            </div>
-          ))}
-          {!jobs.data?.jobs.length && (
-            <p className="quiet">Waiting for the node…</p>
-          )}
-        </div>
-      )}
-    </aside>
-  );
-}
+import { SettingsPage } from "./SettingsPage";
+import { PageTransition } from "./Motion";
+import { usePreferences } from "./Preferences";
+import { messageText, useTranslation } from "./i18n";
+import {
+  mainLinks,
+  workspaceLinks,
+  NavigationGroup,
+  useNavigationDrawer,
+} from "./Navigation";
+import { JobDock } from "./JobDock";
 
 export default function App() {
+  const { t } = useTranslation();
+  const { motion: animated } = usePreferences();
   const identity = useApi<Identity>("/api/auth/me");
   const [revision, setRevision] = useState(0);
   const overview = useApi<Overview>(
@@ -132,6 +66,8 @@ export default function App() {
   } | null>(null);
   const [jobServer, setJobServer] = useState<string | null>(null);
   const [mobile, setMobile] = useState(false);
+  const closeNavigation = useCallback(() => setMobile(false), []);
+  const drawer = useNavigationDrawer(mobile, closeNavigation);
   const navigate = useCallback((path: string) => {
     window.location.hash = path;
     setMobile(false);
@@ -157,6 +93,7 @@ export default function App() {
     const listener = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setMobile(false);
         setShowSearch((value) => !value);
       }
     };
@@ -230,6 +167,8 @@ export default function App() {
         connected={!demo && identity.data?.user.role === "admin"}
       />
     );
+  if (route === "/settings" && !identity.data)
+    return <SettingsPage onBack={() => navigate("/overview")} />;
   if (identity.loading)
     return (
       <div className="boot">
@@ -247,7 +186,7 @@ export default function App() {
           error={identity.error || "The panel is unavailable"}
           retry={() => void identity.refresh()}
         />
-        <a href="/demo">Explore the offline demo</a>
+        <a href="/demo">{t("Explore the offline demo")}</a>
       </div>
     );
   }
@@ -265,11 +204,15 @@ export default function App() {
   return (
     <WorkspaceContext.Provider value={workspace}>
       <div className="app-shell">
-        <aside className={`sidebar ${mobile ? "mobile-open" : ""}`}>
+        <aside
+          ref={drawer.ref}
+          className={`sidebar ${mobile ? "mobile-open" : ""}`}
+          inert={drawer.narrow && !mobile}
+        >
           <a
             href="#/overview"
             className="brand-link"
-            aria-label="Emberdeck overview"
+            aria-label={t("Emberdeck overview")}
           >
             <Logo />
           </a>
@@ -278,53 +221,42 @@ export default function App() {
               <Box size={17} />
             </span>
             <div>
-              <strong>My workspace</strong>
-              <span>{demo ? "Demo environment" : "Personal workspace"}</span>
+              <strong>{t("My workspace")}</strong>
+              <span>{t(demo ? "Demo environment" : "Personal workspace")}</span>
             </div>
             <ChevronRight size={14} />
           </div>
-          <div className="nav-section-label">CONTROL ROOM</div>
-          <nav>
-            {mainLinks.map(([id, label, Icon]) => (
-              <a
-                href={`#/${id}`}
-                key={id}
-                className={`nav-link ${page === id ? "active" : ""}`}
-                onClick={() => setMobile(false)}
-              >
-                <Icon size={17} />
-                <span>{label}</span>
-                {id === "servers" && (
-                  <span className="nav-counter">
-                    {overview.data?.servers.length || 0}
-                  </span>
-                )}
-              </a>
-            ))}
-          </nav>
-          <div className="nav-section-label second">WORKSPACE</div>
-          <nav>
-            {workspaceLinks
-              .filter(([id]) => workspace.can("admin") || id === "activity")
-              .map(([id, label, Icon]) => (
-                <a
-                  href={`#/${id}`}
-                  key={id}
-                  className={`nav-link ${page === id ? "active" : ""}`}
-                  onClick={() => setMobile(false)}
-                >
-                  <Icon size={17} />
-                  <span>{label}</span>
-                </a>
-              ))}
-          </nav>
+          <div className="nav-section-label">{t("CONTROL ROOM")}</div>
+          <NavigationGroup
+            links={mainLinks}
+            page={page}
+            count={workspace.servers.length}
+            label="CONTROL ROOM"
+            onNavigate={closeNavigation}
+          />
+          <div className="nav-section-label second">{t("WORKSPACE")}</div>
+          <NavigationGroup
+            links={workspaceLinks.filter(
+              ([id]) =>
+                workspace.can("admin") ||
+                id === "activity" ||
+                id === "settings",
+            )}
+            page={page}
+            count={workspace.servers.length}
+            label="WORKSPACE"
+            onNavigate={closeNavigation}
+          />
           <div className="sidebar-bottom">
             <button
               className="ember-nav"
-              onClick={() => workspace.assistant(selectedServer?.id)}
+              onClick={() => {
+                workspace.assistant(selectedServer?.id);
+                closeNavigation();
+              }}
             >
               <Sparkles size={17} />
-              <span>Ask Ember</span>
+              <span>{t("Ask Ember")}</span>
               <span className="tag">AI</span>
             </button>
             <a
@@ -334,23 +266,32 @@ export default function App() {
               rel="noreferrer"
             >
               <ExternalLink size={15} />
-              Documentation
+              {t("Documentation")}
               <ArrowUpRight size={13} />
             </a>
             <div className="sidebar-version">
               <span className="dot green" />v{identity.data.version}
-              <span>RUST NATIVE</span>
+              <span>{t("RUST NATIVE")}</span>
             </div>
             <div className="profile">
               <span className="avatar">
                 {identity.data.user.name.slice(0, 2).toUpperCase()}
               </span>
               <div>
-                <strong>{identity.data.user.name}</strong>
+                <strong>
+                  {identity.data.user.id === "owner"
+                    ? t("Owner")
+                    : identity.data.user.name}
+                </strong>
                 <span>
                   {demo
-                    ? "Read-only demo"
-                    : `${identity.data.user.role} access`}
+                    ? t("Read-only demo")
+                    : t("{{role}} access", {
+                        role: t(
+                          identity.data.user.role.charAt(0).toUpperCase() +
+                            identity.data.user.role.slice(1),
+                        ),
+                      })}
                 </span>
               </div>
               {demo ? (
@@ -359,14 +300,14 @@ export default function App() {
                     hostedDemo ? "https://github.com/HVHBIGNAME/emberdeck" : "/"
                   }
                   className="icon-button"
-                  aria-label="Leave demo"
+                  aria-label={t("Leave demo")}
                 >
                   <LogOut size={16} />
                 </a>
               ) : (
                 <button
                   className="icon-button"
-                  aria-label="Sign out"
+                  aria-label={t("Sign out")}
                   onClick={async () => {
                     try {
                       await post("/api/auth/logout", {});
@@ -385,29 +326,29 @@ export default function App() {
         {mobile && (
           <button
             className="sidebar-scrim"
-            aria-label="Close navigation"
+            aria-label={t("Close navigation")}
             onClick={() => setMobile(false)}
           />
         )}
-        <div className="main-shell">
+        <div className="main-shell" inert={drawer.narrow && mobile}>
           <header className="topbar">
             <button
               className="icon-button mobile-toggle"
               onClick={() => setMobile(true)}
-              aria-label="Open navigation"
+              aria-label={t("Open navigation")}
             >
               <Menu size={20} />
             </button>
             <div className="breadcrumb">
               <Box size={15} />
-              <span>My workspace</span>
+              <span>{t("My workspace")}</span>
               <ChevronRight size={13} />
-              <strong>{selectedServer?.name || title}</strong>
+              <strong>{selectedServer?.name || t(title)}</strong>
             </div>
             <div className="topbar-right">
               <span className="connection-state">
                 <span className="dot green" />
-                {online} server{online === 1 ? "" : "s"} online
+                {t("{{count}} servers online", { count: online })}
               </span>
               <button
                 className="global-search"
@@ -417,15 +358,22 @@ export default function App() {
                 }}
               >
                 <Search size={15} />
-                <span>Find a server…</span>
+                <span>{t("Find a server…")}</span>
                 <kbd>
                   <Command size={10} /> K
                 </kbd>
               </button>
+              <button
+                className="icon-button topbar-preferences"
+                aria-label={t("Personal preferences")}
+                onClick={() => navigate("/settings")}
+              >
+                <SlidersHorizontal size={18} />
+              </button>
               {workspace.can("admin") && (
                 <Button variant="primary" onClick={() => workspace.newServer()}>
                   <Plus size={16} />
-                  <span>New server</span>
+                  <span>{t("New server")}</span>
                 </Button>
               )}
             </div>
@@ -438,169 +386,195 @@ export default function App() {
             {overview.loading && !overview.data ? (
               <Loading />
             ) : (
-              <>
-                {page === "overview" && overview.data && (
-                  <Dashboard overview={overview.data} />
-                )}
-                {page === "servers" && route.split("/")[2] && (
-                  <ServerPage id={route.split("/")[2]} />
-                )}
-                {page === "servers" && !route.split("/")[2] && (
-                  <>
-                    <div className="page-heading">
-                      <div>
-                        <span className="eyebrow">
-                          A HOME FOR EVERY ADVENTURE
-                        </span>
-                        <h1>
-                          Your servers<span className="orange-text">.</span>
-                        </h1>
-                        <p>Pick a world and make yourself at home.</p>
+              <AnimatePresence mode="wait">
+                <PageTransition key={route}>
+                  {page === "overview" && overview.data && (
+                    <Dashboard overview={overview.data} />
+                  )}
+                  {page === "servers" && route.split("/")[2] && (
+                    <ServerPage id={route.split("/")[2]} />
+                  )}
+                  {page === "servers" && !route.split("/")[2] && (
+                    <>
+                      <div className="page-heading">
+                        <div>
+                          <span className="eyebrow">
+                            {t("A HOME FOR EVERY ADVENTURE")}
+                          </span>
+                          <h1>
+                            {t("Your servers")}
+                            <span className="orange-text">.</span>
+                          </h1>
+                          <p>{t("Pick a world and make yourself at home.")}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="server-grid">
-                      {workspace.servers.map((server) => (
-                        <ServerCard key={server.id} server={server} />
-                      ))}
-                    </div>
-                    {!workspace.servers.length && (
-                      <Button onClick={() => workspace.newServer()}>
-                        Create your first server
-                      </Button>
-                    )}
-                  </>
-                )}
-                {page === "library" && <LibraryPage />}
-                {page === "blueprints" && <BlueprintsPage />}
-                {page === "automations" && <AutomationsPage />}
-                {page === "backups" && <BackupsPage />}
-                {page === "nodes" && <NodesPage />}
-                {page === "access" && <AccessPage />}
-                {page === "activity" && (
-                  <>
-                    <div className="page-heading">
-                      <div>
-                        <span className="eyebrow">
-                          NOTHING LOST IN THE LOGS
-                        </span>
-                        <h1>
-                          Workspace activity
-                          <span className="orange-text">.</span>
-                        </h1>
-                        <p>An audit trail of the things that matter.</p>
+                      <div className="server-grid">
+                        {workspace.servers.map((server) => (
+                          <ServerCard key={server.id} server={server} />
+                        ))}
                       </div>
-                    </div>
-                    <section className="panel">
-                      <ActivityList activity={overview.data?.activity || []} />
-                    </section>
-                  </>
-                )}
-                {![
-                  "overview",
-                  "servers",
-                  "library",
-                  "blueprints",
-                  "automations",
-                  "backups",
-                  "nodes",
-                  "access",
-                  "activity",
-                ].includes(page) && (
-                  <ErrorBox error="This page does not exist." />
-                )}
-              </>
+                      {!workspace.servers.length && (
+                        <Button onClick={() => workspace.newServer()}>
+                          {t("Create your first server")}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {page === "library" && <LibraryPage />}
+                  {page === "blueprints" && <BlueprintsPage />}
+                  {page === "automations" && <AutomationsPage />}
+                  {page === "backups" && <BackupsPage />}
+                  {page === "nodes" && <NodesPage />}
+                  {page === "access" && <AccessPage />}
+                  {page === "settings" && <SettingsPage />}
+                  {page === "activity" && (
+                    <>
+                      <div className="page-heading">
+                        <div>
+                          <span className="eyebrow">
+                            {t("NOTHING LOST IN THE LOGS")}
+                          </span>
+                          <h1>
+                            {t("Workspace activity")}
+                            <span className="orange-text">.</span>
+                          </h1>
+                          <p>
+                            {t("An audit trail of the things that matter.")}
+                          </p>
+                        </div>
+                      </div>
+                      <section className="panel">
+                        <ActivityList
+                          activity={overview.data?.activity || []}
+                        />
+                      </section>
+                    </>
+                  )}
+                  {![
+                    "overview",
+                    "servers",
+                    "library",
+                    "blueprints",
+                    "automations",
+                    "backups",
+                    "nodes",
+                    "access",
+                    "activity",
+                    "settings",
+                  ].includes(page) && (
+                    <ErrorBox error="This page does not exist." />
+                  )}
+                </PageTransition>
+              </AnimatePresence>
             )}
             <footer className="page-footer">
               <span>
-                <span className="tiny-mark">✦</span> A good place for your next
-                world.
+                <span className="tiny-mark">✦</span>{" "}
+                {t("A good place for your next world.")}
               </span>
               <span>
-                {demo
-                  ? "DEMO WORKSPACE · SAMPLE DATA"
-                  : "SELF-HOSTED · OPEN SOURCE"}
+                {t(
+                  demo
+                    ? "DEMO WORKSPACE · SAMPLE DATA"
+                    : "SELF-HOSTED · OPEN SOURCE",
+                )}
               </span>
             </footer>
           </main>
         </div>
-        {newTemplate && (
-          <NewServer
-            initialTemplate={newTemplate}
-            initialModpack={newModpack}
-            initialVersion={newVersion}
-            onClose={() => setNewTemplate(null)}
-          />
-        )}
-        {assistantServer !== null && (
-          <Assistant
-            initialServer={assistantServer}
-            configured={identity.data.assistant_configured}
-            onClose={() => setAssistantServer(null)}
-          />
-        )}
-        {showSearch && (
-          <Modal
-            title="Find your world"
-            subtitle="Jump straight to a server."
-            initialFocus="input"
-            onClose={() => setShowSearch(false)}
-          >
-            <div className="search-field">
-              <Search size={18} />
-              <input
-                aria-label="Search servers"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Name, core, or Minecraft version…"
-              />
-            </div>
-            <div className="search-results">
-              {workspace.servers
-                .filter((s) =>
-                  `${s.name} ${s.template} ${s.version}`
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-                )
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      navigate(`/servers/${s.id}`);
-                      setShowSearch(false);
-                    }}
-                  >
-                    <Server size={18} />
-                    <span>
-                      <strong>{s.name}</strong>
-                      <small>
-                        {s.template} · {s.version}
-                      </small>
-                    </span>
-                    <ChevronRight size={16} />
-                  </button>
-                ))}
-            </div>
-          </Modal>
-        )}
-        {jobServer && (
-          <JobDock serverId={jobServer} onClose={() => setJobServer(null)} />
-        )}
-        {toast && (
-          <div
-            className={`toast ${toast.error ? "error" : ""}`}
-            role={toast.error ? "alert" : "status"}
-          >
-            {toast.error ? <X size={16} /> : <Check size={16} />}
-            <span>{toast.message}</span>
-            <button
-              className="icon-button"
-              onClick={() => setToast(null)}
-              aria-label="Dismiss notification"
+        <AnimatePresence>
+          {newTemplate && (
+            <NewServer
+              key="new-server"
+              initialTemplate={newTemplate}
+              initialModpack={newModpack}
+              initialVersion={newVersion}
+              onClose={() => setNewTemplate(null)}
+            />
+          )}
+          {assistantServer !== null && (
+            <Assistant
+              key="assistant"
+              initialServer={assistantServer}
+              configured={identity.data.assistant_configured}
+              onClose={() => setAssistantServer(null)}
+            />
+          )}
+          {showSearch && (
+            <Modal
+              key="search"
+              title="Find your world"
+              subtitle={t("Jump straight to a server.")}
+              initialFocus="input"
+              onClose={() => setShowSearch(false)}
             >
-              <X size={14} />
-            </button>
-          </div>
-        )}
+              <div className="search-field">
+                <Search size={18} />
+                <input
+                  aria-label={t("Search servers")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t("Name, core, or Minecraft version…")}
+                />
+              </div>
+              <div className="search-results">
+                {workspace.servers
+                  .filter((s) =>
+                    `${s.name} ${s.template} ${s.version}`
+                      .toLowerCase()
+                      .includes(search.toLowerCase()),
+                  )
+                  .map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        navigate(`/servers/${s.id}`);
+                        setShowSearch(false);
+                      }}
+                    >
+                      <Server size={18} />
+                      <span>
+                        <strong>{s.name}</strong>
+                        <small>
+                          {s.template} · {s.version}
+                        </small>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                  ))}
+              </div>
+            </Modal>
+          )}
+          {jobServer && (
+            <JobDock
+              key="jobs"
+              serverId={jobServer}
+              onClose={() => setJobServer(null)}
+            />
+          )}
+          {toast && (
+            <motion.div
+              key="toast"
+              style={{ x: "-50%" }}
+              initial={animated ? { opacity: 0, y: 16, scale: 0.96 } : false}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: animated ? 8 : 0 }}
+              transition={{ duration: animated ? 0.22 : 0 }}
+              className={`toast ${toast.error ? "error" : ""}`}
+              role={toast.error ? "alert" : "status"}
+            >
+              {toast.error ? <X size={16} /> : <Check size={16} />}
+              <span>{messageText(toast.message)}</span>
+              <button
+                className="icon-button"
+                onClick={() => setToast(null)}
+                aria-label={t("Dismiss notification")}
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </WorkspaceContext.Provider>
   );

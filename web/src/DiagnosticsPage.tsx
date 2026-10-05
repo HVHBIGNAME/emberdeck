@@ -12,7 +12,8 @@ import {
 import { useApi } from "./api";
 import { useWorkspace } from "./context";
 import type { GameServer, Scan } from "./types";
-import { Button, ErrorBox, Loading, Modal, date } from "./ui";
+import { AnimatePresence, Button, ErrorBox, Loading, Modal, date } from "./ui";
+import { useTranslation } from "./i18n";
 
 interface Analysis {
   findings: {
@@ -24,6 +25,7 @@ interface Analysis {
   error_lines: string[];
 }
 export function DiagnosticsPage({ server }: { server: GameServer }) {
+  const { t } = useTranslation();
   const { runAction, can } = useWorkspace();
   const [osv, setOsv] = useState(false);
   const [diagnose, setDiagnose] = useState(false);
@@ -33,11 +35,12 @@ export function DiagnosticsPage({ server }: { server: GameServer }) {
         <section className="panel diagnostic-card">
           <h2>
             <ShieldCheck size={20} className="blue-text" />
-            Know what you're running.
+            {t("Know what you're running.")}
           </h2>
           <p>
-            Inspect JAR metadata, integrity changes, and potentially risky
-            bytecode references. No plugin code is executed during this review.
+            {t(
+              "Inspect JAR metadata, integrity changes, and potentially risky bytecode references. No plugin code is executed during this review.",
+            )}
           </p>
           <label className="checkbox">
             <input
@@ -46,9 +49,9 @@ export function DiagnosticsPage({ server }: { server: GameServer }) {
               onChange={(e) => setOsv(e.target.checked)}
             />
             <span>
-              Check embedded Maven dependencies with OSV.
+              {t("Check embedded Maven dependencies with OSV.")}
               <br />
-              Sends package coordinates and versions to osv.dev.
+              {t("Sends package coordinates and versions to osv.dev.")}
             </span>
           </label>
           <Button
@@ -61,41 +64,46 @@ export function DiagnosticsPage({ server }: { server: GameServer }) {
             }
           >
             <ScanLine size={15} />
-            Review installed JARs
+            {t("Review installed JARs")}
           </Button>
         </section>
         <section className="panel diagnostic-card">
           <h2>
             <Bug size={20} className="orange-text" />
-            Find the one that breaks it.
+            {t("Find the one that breaks it.")}
           </h2>
           <p>
-            Reproduce startup in an isolated clone, then narrow down failing
-            plugin or mod groups. Declared hard dependencies stay together.
+            {t(
+              "Reproduce startup in an isolated clone, then narrow down failing plugin or mod groups. Declared hard dependencies stay together.",
+            )}
           </p>
           <p style={{ marginTop: 12 }}>
-            The original server must be stopped. Tests use a separate container
-            and publish no game port.
+            {t(
+              "The original server must be stopped. Tests use a separate container and publish no game port.",
+            )}
           </p>
           <Button
             disabled={!can("diagnostics.write", server.id)}
             onClick={() => setDiagnose(true)}
           >
             <Activity size={15} />
-            Start isolated diagnosis
+            {t("Start isolated diagnosis")}
           </Button>
         </section>
       </div>
       <LogAnalysis serverId={server.id} />
       <JarReview serverId={server.id} />
-      {diagnose && (
-        <DiagnosisDialog server={server} onClose={() => setDiagnose(false)} />
-      )}
+      <AnimatePresence>
+        {diagnose && (
+          <DiagnosisDialog server={server} onClose={() => setDiagnose(false)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
 function LogAnalysis({ serverId }: { serverId: string }) {
+  const { t } = useTranslation();
   const { revision } = useWorkspace();
   const analysis = useApi<Analysis>(
     `/api/servers/${serverId}/analysis`,
@@ -106,8 +114,8 @@ function LogAnalysis({ serverId }: { serverId: string }) {
     <section className="panel" style={{ marginTop: 22 }}>
       <header className="panel-heading">
         <div>
-          <h2>What the logs are saying</h2>
-          <p>Local pattern analysis · no AI provider required</p>
+          <h2>{t("What the logs are saying")}</h2>
+          <p>{t("Local pattern analysis · no AI provider required")}</p>
         </div>
         <FileSearch size={20} className="muted" />
       </header>
@@ -118,8 +126,8 @@ function LogAnalysis({ serverId }: { serverId: string }) {
         ) : analysis.data?.findings.length ? (
           analysis.data.findings.map((f) => (
             <div className="finding" key={f.signature}>
-              <h3>{f.title}</h3>
-              <p>{f.advice}</p>
+              <h3>{t(f.title)}</h3>
+              <p>{t(f.advice)}</p>
               {f.evidence.map((line, i) => (
                 <code key={i}>{line}</code>
               ))}
@@ -129,8 +137,9 @@ function LogAnalysis({ serverId }: { serverId: string }) {
           <div className="notice">
             <CheckCircle2 size={17} />
             <span>
-              No recognized error patterns in the recent log. This is a limited
-              check, not a complete health assessment.
+              {t(
+                "No recognized error patterns in the recent log. This is a limited check, not a complete health assessment.",
+              )}
             </span>
           </div>
         )}
@@ -140,20 +149,21 @@ function LogAnalysis({ serverId }: { serverId: string }) {
 }
 
 function JarReview({ serverId }: { serverId: string }) {
+  const { t } = useTranslation();
   const { revision } = useWorkspace();
   const scan = useApi<Scan>(`/api/servers/${serverId}/scan`, 6000, revision);
   return (
     <section className="panel" style={{ marginTop: 22 }}>
       <header className="panel-heading">
         <div>
-          <h2>JAR review</h2>
+          <h2>{t("JAR review")}</h2>
           <p>
             {scan.data?.at
-              ? `Last checked ${date(scan.data.at)}`
-              : "No review has been run yet"}
+              ? t("Last checked {{date}}", { date: date(scan.data.at) })
+              : t("No review has been run yet")}
           </p>
         </div>
-        <span className="tag">STATIC ANALYSIS</span>
+        <span className="tag">{t("STATIC ANALYSIS")}</span>
       </header>
       <ErrorBox error={scan.error} />
       {scan.data?.at && (
@@ -161,12 +171,16 @@ function JarReview({ serverId }: { serverId: string }) {
           <div className="scan-summary">
             <ShieldCheck size={15} />
             <span>
-              {scan.data.jars.length} JARs reviewed ·{" "}
-              {scan.data.jars.reduce(
-                (sum, jar) => sum + jar.findings.length,
-                0,
-              )}{" "}
-              findings for human review
+              {t(
+                "JARs reviewed: {{jars}} · findings for human review: {{findings}}",
+                {
+                  jars: scan.data.jars.length,
+                  findings: scan.data.jars.reduce(
+                    (sum, jar) => sum + jar.findings.length,
+                    0,
+                  ),
+                },
+              )}
             </span>
           </div>
           <div className="scan-results">
@@ -177,14 +191,14 @@ function JarReview({ serverId }: { serverId: string }) {
                   <span className="mono">{jar.path}</span>
                   <span className="tag">
                     {jar.findings.length
-                      ? `${jar.findings.length} findings`
-                      : "No flagged patterns"}
+                      ? t("Findings: {{count}}", { count: jar.findings.length })
+                      : t("No flagged patterns")}
                   </span>
                 </div>
                 {jar.findings.map((finding, i) => (
                   <div className={`finding ${finding.severity}`} key={i}>
-                    <h3>{finding.title}</h3>
-                    <p>{finding.detail}</p>
+                    <h3>{t(finding.title)}</h3>
+                    <p>{t(finding.detail)}</p>
                     {finding.evidence.map((e, index) => (
                       <code key={index}>{e}</code>
                     ))}
@@ -195,7 +209,7 @@ function JarReview({ serverId }: { serverId: string }) {
           </div>
           {scan.data.osv && (
             <div style={{ padding: 20 }}>
-              <h3>OSV dependency results</h3>
+              <h3>{t("OSV dependency results")}</h3>
               {scan.data.osv.results.map((result, i) => (
                 <div
                   key={i}
@@ -205,7 +219,9 @@ function JarReview({ serverId }: { serverId: string }) {
                   <p>
                     {result.vulns?.length
                       ? result.vulns.map((v) => v.id).join(", ")
-                      : "No matching advisories returned for this coordinate."}
+                      : t(
+                          "No matching advisories returned for this coordinate.",
+                        )}
                   </p>
                 </div>
               ))}
@@ -214,9 +230,9 @@ function JarReview({ serverId }: { serverId: string }) {
         </>
       )}
       <p className="quiet">
-        Static checks can miss threats and flag legitimate functionality. Nested
-        JARs, native binaries, and downloaded code are outside this scanner's
-        coverage.
+        {t(
+          "Static checks can miss threats and flag legitimate functionality. Nested JARs, native binaries, and downloaded code are outside this scanner's coverage.",
+        )}
       </p>
     </section>
   );
@@ -230,6 +246,7 @@ function DiagnosisDialog({
   onClose: () => void;
 }) {
   const { runAction } = useWorkspace();
+  const { t } = useTranslation();
   const [signature, setSignature] = useState("");
   const [timeout, setTimeoutValue] = useState(120);
   const [trials, setTrials] = useState(16);
@@ -239,7 +256,7 @@ function DiagnosisDialog({
   return (
     <Modal
       title="Reproduce. Narrow down. Understand."
-      subtitle="An isolated startup check using a clone of this server."
+      subtitle={t("An isolated startup check using a clone of this server.")}
       onClose={onClose}
     >
       <div className="form-stack">
@@ -247,21 +264,22 @@ function DiagnosisDialog({
           <ErrorBox error="Stop the original server before starting diagnosis." />
         )}
         <label>
-          Error signature (optional)
+          {t("Error signature (optional)")}
           <input
             value={signature}
             onChange={(e) => setSignature(e.target.value)}
-            placeholder="Exact error text from the log"
+            placeholder={t("Exact error text from the log")}
             maxLength={500}
           />
           <small>
-            A literal text match. Without a signature, the check detects failed
-            startup.
+            {t(
+              "A literal text match. Without a signature, the check detects failed startup.",
+            )}
           </small>
         </label>
         <div className="form-grid">
           <label>
-            Timeout per trial (seconds)
+            {t("Timeout per trial (seconds)")}
             <input
               type="number"
               min={30}
@@ -271,7 +289,7 @@ function DiagnosisDialog({
             />
           </label>
           <label>
-            Maximum trials
+            {t("Maximum trials")}
             <input
               type="number"
               min={4}
@@ -288,22 +306,23 @@ function DiagnosisDialog({
             onChange={(e) => setApply(e.target.checked)}
           />
           <span>
-            Apply a verified fix: make a backup, then rename the failing JARs to{" "}
+            {t(
+              "Apply a verified fix: make a backup, then rename the failing JARs to",
+            )}{" "}
             <code>.jar.disabled</code>.
           </span>
         </label>
         <div className="notice orange">
           <Info size={17} />
           <span>
-            Only applied if removing the identified group produces a healthy
-            startup and the original JAR hashes are unchanged. Runtime-only
-            problems need a separate reproduction. The clone needs enough disk
-            space and memory to boot.
+            {t(
+              "Only applied if removing the identified group produces a healthy startup and the original JAR hashes are unchanged. Runtime-only problems need a separate reproduction. The clone needs enough disk space and memory to boot.",
+            )}
           </span>
         </div>
       </div>
       <div className="modal-actions">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("Cancel")}</Button>
         <Button
           variant="primary"
           busy={busy}
@@ -322,7 +341,7 @@ function DiagnosisDialog({
           }}
         >
           <Play size={14} />
-          Run diagnosis
+          {t("Run diagnosis")}
         </Button>
       </div>
     </Modal>

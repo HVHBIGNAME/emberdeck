@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -29,17 +30,29 @@ import {
 } from "./ui";
 import { Chart, Sparkline } from "./Chart";
 import { publicFile } from "./assets";
+import { useTranslation, locale } from "./i18n";
+import { usePreferences } from "./Preferences";
+import { Count } from "./Motion";
 
 export function ServerCard({ server }: { server: GameServer }) {
+  const { t } = useTranslation();
+  const { motion: animated } = usePreferences();
   const { navigate, runAction, can } = useWorkspace();
   const [menu, setMenu] = useState(false);
   const online = server.snapshot.state === "online";
   return (
-    <article className="server-card">
+    <motion.article
+      className="server-card"
+      layout={animated ? "position" : false}
+      initial={animated ? { opacity: 0, y: 14, scale: 0.985 } : false}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: animated ? 0.97 : 1 }}
+      transition={{ duration: animated ? 0.3 : 0, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="server-card-top">
         <button
           className="server-identity"
-          aria-label={`Open ${server.name}`}
+          aria-label={t("Open {{name}}", { name: server.name })}
           onClick={() => navigate(`/servers/${server.id}`)}
         >
           <img src={publicFile(`worlds/${world(server)}.svg`)} alt="" />
@@ -57,7 +70,7 @@ export function ServerCard({ server }: { server: GameServer }) {
           <div className="menu-anchor">
             <button
               className="icon-button"
-              aria-label={`Actions for ${server.name}`}
+              aria-label={t("Actions for {{name}}", { name: server.name })}
               onClick={() => setMenu(!menu)}
             >
               <MoreHorizontal size={19} />
@@ -76,7 +89,7 @@ export function ServerCard({ server }: { server: GameServer }) {
                     setMenu(false);
                   }}
                 >
-                  Open server
+                  {t("Open server")}
                 </button>
                 {["start", "stop", "restart"].map((signal) => (
                   <button
@@ -87,7 +100,7 @@ export function ServerCard({ server }: { server: GameServer }) {
                       setMenu(false);
                     }}
                   >
-                    {signal.charAt(0).toUpperCase() + signal.slice(1)}
+                    {t(signal.charAt(0).toUpperCase() + signal.slice(1))}
                   </button>
                 ))}
               </div>
@@ -105,21 +118,24 @@ export function ServerCard({ server }: { server: GameServer }) {
             </strong>
           </label>
           <Progress
-            label={`${server.name} CPU usage`}
+            label={t("{{name}} CPU usage", { name: server.name })}
             value={server.snapshot.cpu_percent / server.cpu_limit}
             color={online ? "orange" : "muted"}
           />
         </div>
         <div>
           <label>
-            <span>Memory</span>
+            <span>{t("Memory")}</span>
             <strong>
               {bytes(server.snapshot.memory_bytes)}
-              <small> / {(server.memory_mb / 1024).toFixed(0)} GiB</small>
+              <small>
+                {" "}
+                / {(server.memory_mb / 1024).toFixed(0)} {t("GiB")}
+              </small>
             </strong>
           </label>
           <Progress
-            label={`${server.name} memory usage`}
+            label={t("{{name}} memory usage", { name: server.name })}
             value={
               (server.snapshot.memory_bytes / (server.memory_mb * 1024 ** 2)) *
               100
@@ -134,7 +150,7 @@ export function ServerCard({ server }: { server: GameServer }) {
           {server.address || `:${server.port}`}
           <CopyButton
             value={server.address || `localhost:${server.port}`}
-            label={`Copy address for ${server.name}`}
+            label={t("Copy address for {{name}}", { name: server.name })}
           />
         </span>
         <span className="player-count">
@@ -143,7 +159,7 @@ export function ServerCard({ server }: { server: GameServer }) {
           <span>/ {server.max_players}</span>
         </span>
       </footer>
-    </article>
+    </motion.article>
   );
 }
 
@@ -154,6 +170,7 @@ export function ActivityList({
   activity: Activity[];
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className={`activity-list ${compact ? "compact" : ""}`}>
       {activity.slice(0, compact ? 3 : 50).map((event) => (
@@ -170,22 +187,43 @@ export function ActivityList({
             )}
           </span>
           <div>
-            <strong>{event.action}</strong>
+            <strong>{t(event.action)}</strong>
             <span>{event.detail}</span>
           </div>
-          <time title={new Date(event.at * 1000).toLocaleString()}>
+          <time title={new Date(event.at * 1000).toLocaleString(locale())}>
             {ago(event.at)}
           </time>
         </div>
       ))}
       {!activity.length && (
-        <p className="quiet">Your workspace activity will appear here.</p>
+        <p className="quiet">
+          {t("Your workspace activity will appear here.")}
+        </p>
       )}
     </div>
   );
 }
 
+function StatCard({ children, index }: { children: ReactNode; index: number }) {
+  const { motion: enabled } = usePreferences();
+  return (
+    <motion.div
+      className="stat-card"
+      initial={enabled ? { opacity: 0, y: 16 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: enabled ? 0.45 : 0,
+        delay: enabled ? index * 0.055 : 0,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export default function Dashboard({ overview }: { overview: Overview }) {
+  const { t } = useTranslation();
   const { newServer, navigate, assistant, can } = useWorkspace();
   const [filter, setFilter] = useState("all");
   const [range, setRange] = useState("24h");
@@ -226,19 +264,20 @@ export default function Dashboard({ overview }: { overview: Overview }) {
       <div className="page-heading">
         <div>
           <span className="eyebrow">
-            A LITTLE LESS ADMIN. A LOT MORE MINECRAFT.
+            {t("A LITTLE LESS ADMIN. A LOT MORE MINECRAFT.")}
           </span>
           <h1>
-            Your worlds, in good hands<span className="orange-text">.</span>
+            {t("Your worlds, in good hands")}
+            <span className="orange-text">.</span>
           </h1>
-          <p>A clear view of your servers. More room to build.</p>
+          <p>{t("A clear view of your servers. More room to build.")}</p>
         </div>
         <div className="heading-action">
           <span className="live-label">
-            <span className="dot green" /> LIVE OVERVIEW
+            <span className="dot green" /> {t("LIVE OVERVIEW")}
           </span>
           <span className="date-label">
-            {new Date().toLocaleDateString("en", {
+            {new Date().toLocaleDateString(locale(), {
               month: "long",
               day: "numeric",
               year: "numeric",
@@ -246,30 +285,32 @@ export default function Dashboard({ overview }: { overview: Overview }) {
           </span>
         </div>
       </div>
-      <section className="stat-grid" aria-label="Workspace statistics">
-        <div className="stat-card">
+      <section className="stat-grid" aria-label={t("Workspace statistics")}>
+        <StatCard index={0}>
           <div className="stat-label">
-            Servers online
+            {t("Servers online")}
             <Server size={16} />
           </div>
           <div className="stat-number">
-            {String(active).padStart(2, "0")}
+            <Count value={active} pad={2} />
             <span>/ {String(servers.length).padStart(2, "0")}</span>
           </div>
           <div className="stat-foot">
             <span className="dot green" />
             {active === servers.length && active
-              ? "All worlds are up and running"
-              : `${servers.length - active} server${servers.length - active === 1 ? "" : "s"} resting, ready when you are`}
+              ? t("All worlds are up and running")
+              : t("{{count}} servers resting, ready when you are", {
+                  count: servers.length - active,
+                })}
           </div>
-        </div>
-        <div className="stat-card">
+        </StatCard>
+        <StatCard index={1}>
           <div className="stat-label">
-            Players online
+            {t("Players online")}
             <Users size={16} />
           </div>
           <div className="stat-number">
-            {players}
+            <Count value={players} />
             <Sparkline
               values={points.map((p) => p.value)}
               color="var(--green)"
@@ -282,47 +323,51 @@ export default function Dashboard({ overview }: { overview: Overview }) {
               <ArrowDownRight size={14} />
             )}
             {delta > 0 ? "+" : ""}
-            {delta} <span>over the selected period</span>
+            {delta} <span>{t("over the selected period")}</span>
           </div>
-        </div>
-        <div className="stat-card">
+        </StatCard>
+        <StatCard index={2}>
           <div className="stat-label">
-            Memory in use
+            {t("Memory in use")}
             <HardDrive size={16} />
           </div>
           <div className="stat-number">
-            {(memory / 1024 ** 3).toFixed(1)}
-            <span>GiB</span>
+            <Count value={memory / 1024 ** 3} decimals={1} />
+            <span>{t("GiB")}</span>
           </div>
           <div className="stat-foot split">
             <Progress
               value={allocatedMemory ? (memory / allocatedMemory) * 100 : 0}
               color="blue"
             />
-            <span>of {bytes(allocatedMemory, 0)}</span>
+            <span>
+              {t("of {{amount}}", { amount: bytes(allocatedMemory, 0) })}
+            </span>
           </div>
-        </div>
-        <div className="stat-card">
+        </StatCard>
+        <StatCard index={3}>
           <div className="stat-label">
-            CPU utilization
+            {t("CPU utilization")}
             <Cpu size={16} />
           </div>
           <div className="stat-number">
-            {(allocatedCpu ? cpu / allocatedCpu : 0).toFixed(1)}
+            <Count value={allocatedCpu ? cpu / allocatedCpu : 0} decimals={1} />
             <span>%</span>
             <Sparkline values={servers[0]?.history.map((m) => m.cpu) || []} />
           </div>
           <div className="stat-foot">
-            Across {allocatedCpu.toFixed(0)} allocated CPU cores
+            {t("Across {{count}} allocated CPU cores", {
+              count: Math.round(allocatedCpu),
+            })}
           </div>
-        </div>
+        </StatCard>
       </section>
       <div className="overview-middle">
         <section className="panel chart-panel">
           <header className="panel-heading">
             <div>
-              <h2>Player activity</h2>
-              <p>A little livelier with every login.</p>
+              <h2>{t("Player activity")}</h2>
+              <p>{t("A little livelier with every login.")}</p>
             </div>
             <div className="segment">
               {["1h", "6h", "24h"].map((period) => (
@@ -331,7 +376,7 @@ export default function Dashboard({ overview }: { overview: Overview }) {
                   className={range === period ? "active" : ""}
                   onClick={() => setRange(period)}
                 >
-                  {period}
+                  {t(period)}
                 </button>
               ))}
             </div>
@@ -339,10 +384,10 @@ export default function Dashboard({ overview }: { overview: Overview }) {
           <Chart points={points} />
           <div className="chart-legend">
             <span>
-              <i className="dot orange" /> Players across all servers
+              <i className="dot orange" /> {t("Players across all servers")}
             </span>
             <span>
-              <b>{players}</b> playing right now
+              <b>{players}</b> {t("playing right now")}
             </span>
           </div>
         </section>
@@ -351,22 +396,22 @@ export default function Dashboard({ overview }: { overview: Overview }) {
             <span className="ember-avatar">
               <Sparkles size={22} />
             </span>
-            <span className="tag orange-tag">YOUR CO-PILOT</span>
+            <span className="tag orange-tag">{t("YOUR CO-PILOT")}</span>
           </div>
-          <h2>A second pair of eyes.</h2>
+          <h2>{t("A second pair of eyes.")}</h2>
           <p>
-            Find the right plugin. Make sense of a log.
+            {t("Find the right plugin. Make sense of a log.")}
             <br />
-            Get back to the part you love.
+            {t("Get back to the part you love.")}
           </p>
           <button
             className="assistant-link"
             onClick={() => assistant(servers[0]?.id)}
           >
-            Ask Ember <ArrowUpRight size={17} />
+            {t("Ask Ember")} <ArrowUpRight size={17} />
           </button>
           <div className="ember-card-footer">
-            <CircleCheck size={13} /> Your confirmation. Every change.
+            <CircleCheck size={13} /> {t("Your confirmation. Every change.")}
           </div>
           <div className="pixel-motif" aria-hidden="true">
             <i />
@@ -382,9 +427,10 @@ export default function Dashboard({ overview }: { overview: Overview }) {
         <header className="section-heading">
           <div>
             <h2>
-              Your servers <span className="count-badge">{servers.length}</span>
+              {t("Your servers")}{" "}
+              <span className="count-badge">{servers.length}</span>
             </h2>
-            <p>Every adventure starts somewhere.</p>
+            <p>{t("Every adventure starts somewhere.")}</p>
           </div>
           <div className="section-tools">
             <div className="segment">
@@ -394,23 +440,25 @@ export default function Dashboard({ overview }: { overview: Overview }) {
                   className={filter === value ? "active" : ""}
                   onClick={() => setFilter(value)}
                 >
-                  {value.charAt(0).toUpperCase() + value.slice(1)}
+                  {t(value.charAt(0).toUpperCase() + value.slice(1))}
                 </button>
               ))}
             </div>
             {can("admin") && (
               <Button variant="ghost" onClick={() => newServer()}>
                 <Plus size={16} />
-                New server
+                {t("New server")}
               </Button>
             )}
           </div>
         </header>
         {shown.length ? (
           <div className="server-grid">
-            {shown.map((server) => (
-              <ServerCard key={server.id} server={server} />
-            ))}
+            <AnimatePresence>
+              {shown.map((server) => (
+                <ServerCard key={server.id} server={server} />
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <Empty
@@ -424,7 +472,7 @@ export default function Dashboard({ overview }: { overview: Overview }) {
             action={
               can("admin") && (
                 <Button variant="primary" onClick={() => newServer()}>
-                  <Plus size={16} /> Create a server
+                  <Plus size={16} /> {t("Create a server")}
                 </Button>
               )
             }
@@ -433,9 +481,9 @@ export default function Dashboard({ overview }: { overview: Overview }) {
       </section>
       <section className="panel recent-activity">
         <header className="panel-heading">
-          <h2>Recent activity</h2>
+          <h2>{t("Recent activity")}</h2>
           <button className="text-button" onClick={() => navigate("/activity")}>
-            View all <ArrowRight size={14} />
+            {t("View all")} <ArrowRight size={14} />
           </button>
         </header>
         <ActivityList activity={overview.activity} compact />

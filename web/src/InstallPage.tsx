@@ -11,7 +11,9 @@ import {
   Terminal,
 } from "lucide-react";
 import { useApi } from "./api";
-import { Button, CopyButton, ErrorBox, Logo } from "./ui";
+import { Button, CopyButton, ErrorBox, Logo, Select } from "./ui";
+import { useTranslation } from "./i18n";
+import { PageTransition } from "./Motion";
 import {
   accessProfiles,
   initialInstall,
@@ -42,6 +44,7 @@ export function InstallPage({
   onBack: () => void;
   connected: boolean;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<InstallDraft>(initialInstall);
   const update: UpdateDraft = (key, value) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -53,59 +56,66 @@ export function InstallPage({
         <Logo />
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft size={15} />
-          Back to workspace
+          {t("Back to workspace")}
         </Button>
       </header>
-      <div className="install-heading">
-        <span className="eyebrow">A SHORTER WAY TO YOUR FIRST WORLD</span>
-        <h1>
-          One command. Your choice<span className="orange-text">.</span>
-        </h1>
-        <p>
-          Choose how to connect. The native installer handles the services,
-          credentials and access setup.
-        </p>
-        <div className="install-badges">
-          <span className="tag">{releaseTag}</span>
-          <span className="tag">RUST NATIVE</span>
-          <span className="tag">UBUNTU / DEBIAN · SYSTEMD</span>
+      <PageTransition>
+        <div className="install-heading">
+          <span className="eyebrow">
+            {t("A SHORTER WAY TO YOUR FIRST WORLD")}
+          </span>
+          <h1>
+            {t("One command. Your choice")}
+            <span className="orange-text">.</span>
+          </h1>
+          <p>
+            {t(
+              "Choose how to connect. The native installer handles the services, credentials and access setup.",
+            )}
+          </p>
+          <div className="install-badges">
+            <span className="tag">{releaseTag}</span>
+            <span className="tag">{t("RUST NATIVE")}</span>
+            <span className="tag">UBUNTU / DEBIAN · SYSTEMD</span>
+          </div>
         </div>
-      </div>
-      {connected && <CurrentDeployment />}
-      <div className="install-layout">
-        <section className="panel install-options">
-          <InstallOptions draft={draft} update={update} />
-        </section>
-        <aside className="install-preview">
-          <CommandPreview draft={draft} command={command} error={error} />
-          <section className="panel install-downloads">
-            <h2>
-              <Download size={17} />
-              Prefer a native download?
-            </h2>
-            <p>
-              Linux binaries include the game node. Windows runs the panel, demo
-              and CLI with a Linux node.
-            </p>
-            <a
-              href={`${repository}/releases/tag/${releaseTag}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Linux amd64 / arm64 and Windows amd64
-              <ArrowUpRight size={15} />
-            </a>
+        {connected && <CurrentDeployment />}
+        <div className="install-layout">
+          <section className="panel install-options">
+            <InstallOptions draft={draft} update={update} />
           </section>
-        </aside>
-      </div>
+          <aside className="install-preview">
+            <CommandPreview draft={draft} command={command} error={error} />
+            <section className="panel install-downloads">
+              <h2>
+                <Download size={17} />
+                {t("Prefer a native download?")}
+              </h2>
+              <p>
+                {t(
+                  "Linux binaries include the game node. Windows runs the panel, demo and CLI with a Linux node.",
+                )}
+              </p>
+              <a
+                href={`${repository}/releases/tag/${releaseTag}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Linux amd64 / arm64 and Windows amd64")}
+                <ArrowUpRight size={15} />
+              </a>
+            </section>
+          </aside>
+        </div>
+      </PageTransition>
       <footer className="install-footer">
-        <span>Self-hosted. Open source. Yours.</span>
+        <span>{t("Self-hosted. Open source. Yours.")}</span>
         <a
           href={`${repository}/blob/main/docs/installation-profiles.md`}
           target="_blank"
           rel="noreferrer"
         >
-          Installation guide
+          {t("Installation guide")}
           <ArrowUpRight size={13} />
         </a>
       </footer>
@@ -114,22 +124,23 @@ export function InstallPage({
 }
 
 function CurrentDeployment() {
+  const { t } = useTranslation();
   const deployment = useApi<Deployment>("/api/deployment", 15000);
   return (
     <section className="panel install-current">
       <Network size={19} className="orange-text" />
       <div>
-        <strong>This workspace</strong>
+        <strong>{t("This workspace")}</strong>
         <p>
           {deployment.data
-            ? `${accessProfiles.find((profile) => profile.id === deployment.data?.mode)?.name} · v${deployment.data.version}`
-            : "Reading access configuration…"}
+            ? `${t(accessProfiles.find((profile) => profile.id === deployment.data?.mode)?.name || deployment.data.mode)} · v${deployment.data.version}`
+            : t("Reading access configuration…")}
         </p>
       </div>
       {deployment.data && (
         <div className="install-current-address">
           <code>
-            {deployment.data.public_url || "Waiting for a tunnel URL"}
+            {deployment.data.public_url || t("Waiting for a tunnel URL")}
           </code>
           {deployment.data.public_url && (
             <CopyButton
@@ -137,7 +148,9 @@ function CurrentDeployment() {
               label="Copy current panel URL"
             />
           )}
-          <small>Origin: {deployment.data.origin}</small>
+          <small>
+            {t("Origin:")} {deployment.data.origin}
+          </small>
         </div>
       )}
       <ErrorBox
@@ -155,47 +168,51 @@ function InstallOptions({
   draft: InstallDraft;
   update: UpdateDraft;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="form-stack">
       <div className="install-step">
         <span>01</span>
         <div>
-          <h2>What belongs on this machine?</h2>
-          <p>A complete workspace, or another piece of your infrastructure.</p>
+          <h2>{t("What belongs on this machine?")}</h2>
+          <p>
+            {t(
+              "A complete workspace, or another piece of your infrastructure.",
+            )}
+          </p>
         </div>
       </div>
       <label>
-        Components
-        <select
-          aria-label="Components"
+        {t("Components")}
+        <Select
+          label={t("Components")}
           value={draft.role}
-          onChange={(event) =>
+          onValueChange={(value) =>
             update(
               "role",
-              event.target.value === "panel"
-                ? "panel"
-                : event.target.value === "agent"
-                  ? "agent"
-                  : "all",
+              value === "panel" ? "panel" : value === "agent" ? "agent" : "all",
             )
           }
-        >
-          <option value="all">All-in-one · panel + Minecraft node</option>
-          <option value="panel">
-            Control panel only · connect remote nodes
-          </option>
-          <option value="agent">
-            Minecraft node only · connect to a panel
-          </option>
-        </select>
+          options={[
+            { value: "all", label: t("All-in-one · panel + Minecraft node") },
+            {
+              value: "panel",
+              label: t("Control panel only · connect remote nodes"),
+            },
+            {
+              value: "agent",
+              label: t("Minecraft node only · connect to a panel"),
+            },
+          ]}
+        />
       </label>
       {draft.role !== "agent" ? (
         <>
           <div className="install-step">
             <span>02</span>
             <div>
-              <h2>Choose your way in.</h2>
-              <p>Outbound tunnels work without inbound web ports.</p>
+              <h2>{t("Choose your way in.")}</h2>
+              <p>{t("Outbound tunnels work without inbound web ports.")}</p>
             </div>
           </div>
           <ProfileChoices
@@ -204,7 +221,7 @@ function InstallOptions({
           />
           {needsHostname(draft.access) && (
             <label>
-              Public HTTPS URL
+              {t("Public HTTPS URL")}
               <input
                 type="url"
                 value={draft.publicUrl}
@@ -219,13 +236,17 @@ function InstallOptions({
               <div className="notice">
                 <Cloud size={17} />
                 <span>
-                  In Cloudflare, create a remotely managed tunnel and route your
-                  hostname to <code>http://127.0.0.1:{draft.panelPort}</code>.
-                  The installer asks for its connector token in the terminal.
+                  {t(
+                    "In Cloudflare, create a remotely managed tunnel and route your hostname to",
+                  )}{" "}
+                  <code>http://127.0.0.1:{draft.panelPort}</code>.{" "}
+                  {t(
+                    "The installer asks for its connector token in the terminal.",
+                  )}
                 </span>
               </div>
               <label>
-                Connector token file (optional)
+                {t("Connector token file (optional)")}
                 <input
                   value={draft.tokenFile}
                   onChange={(event) => update("tokenFile", event.target.value)}
@@ -233,8 +254,9 @@ function InstallOptions({
                   maxLength={512}
                 />
                 <small>
-                  Leave empty for a hidden terminal prompt. The connector token
-                  is stored privately on the host.
+                  {t(
+                    "Leave empty for a hidden terminal prompt. The connector token is stored privately on the host.",
+                  )}
                 </small>
               </label>
             </>
@@ -243,9 +265,11 @@ function InstallOptions({
             <div className="notice">
               <Globe size={17} />
               <span>
-                Configure your existing proxy to forward this hostname to{" "}
-                <code>http://127.0.0.1:{draft.panelPort}</code> and preserve the
-                Host header. The installer verifies the public endpoint.
+                {t("Configure your existing proxy to forward this hostname to")}{" "}
+                <code>http://127.0.0.1:{draft.panelPort}</code>{" "}
+                {t(
+                  "and preserve the Host header. The installer verifies the public endpoint.",
+                )}
               </span>
             </div>
           )}
@@ -254,18 +278,20 @@ function InstallOptions({
         <div className="notice">
           <Network size={17} />
           <span>
-            The node installs Docker and a scoped SFTP service. Register its
-            management endpoint and token in your existing panel's Nodes page.
+            {t(
+              "The node installs Docker and a scoped SFTP service. Register its management endpoint and token in your existing panel's Nodes page.",
+            )}
           </span>
         </div>
       )}
       <details className="install-advanced">
-        <summary>Ports &amp; game connection address</summary>
+        <summary>{t("Ports & game connection address")}</summary>
         <AdvancedFields draft={draft} update={update} />
       </details>
       <p className="install-boundary">
-        Web tunnels carry the panel and API. Minecraft and SFTP use the node's
-        own addresses and their respective ports.
+        {t(
+          "Web tunnels carry the panel and API. Minecraft and SFTP use the node's own addresses and their respective ports.",
+        )}
       </p>
     </div>
   );
@@ -278,16 +304,17 @@ function ProfileChoices({
   access: AccessMode;
   select: (access: AccessMode) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <fieldset className="install-profiles">
-      <legend className="sr-only">Web access method</legend>
+      <legend className="sr-only">{t("Web access method")}</legend>
       {accessProfiles.map((profile) => (
         <label
           className={`install-profile ${access === profile.id ? "selected" : ""}`}
           key={profile.id}
         >
           <span className="install-profile-heading">
-            <strong>{profile.name}</strong>
+            <strong>{t(profile.name)}</strong>
             <input
               type="radio"
               name="access-profile"
@@ -296,9 +323,9 @@ function ProfileChoices({
               onChange={() => select(profile.id)}
             />
           </span>
-          <span className="tag">{profile.badge}</span>
+          <span className="tag">{t(profile.badge)}</span>
           <span className="install-profile-description">
-            {profile.description}
+            {t(profile.description)}
           </span>
         </label>
       ))}
@@ -313,14 +340,15 @@ function AdvancedFields({
   draft: InstallDraft;
   update: UpdateDraft;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="form-stack">
       <label>
-        Game hostname or IP (optional)
+        {t("Game hostname or IP (optional)")}
         <input
           value={draft.publicHost}
           onChange={(event) => update("publicHost", event.target.value)}
-          placeholder="play.example.com · auto-detect when empty"
+          placeholder={t("play.example.com · auto-detect when empty")}
           maxLength={253}
         />
       </label>
@@ -333,7 +361,7 @@ function AdvancedFields({
           ] as const
         ).map(([key, label]) => (
           <label key={key}>
-            {label}
+            {t(label)}
             <input
               type="number"
               min={1024}
@@ -345,9 +373,9 @@ function AdvancedFields({
         ))}
       </div>
       <small>
-        These ports apply to fresh installations. Upgrades preserve existing
-        ports and credentials; use the current origin shown above when
-        configuring an existing tunnel.
+        {t(
+          "These ports apply to fresh installations. Upgrades preserve existing ports and credentials; use the current origin shown above when configuring an existing tunnel.",
+        )}
       </small>
     </div>
   );
@@ -362,26 +390,27 @@ function CommandPreview({
   command: string;
   error: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="panel install-command-card">
       <div className="install-step">
         <span>03</span>
         <div>
-          <h2>Make it yours.</h2>
-          <p>Run this command on your Linux host through SSH.</p>
+          <h2>{t("Make it yours.")}</h2>
+          <p>{t("Run this command on your Linux host through SSH.")}</p>
         </div>
       </div>
       <div className="install-command-heading">
         <Terminal size={15} />
-        <span>ROOT / SUDO TERMINAL</span>
+        <span>{t("ROOT / SUDO TERMINAL")}</span>
       </div>
       {command ? (
-        <pre className="install-command" aria-label="Installation command">
+        <pre className="install-command" aria-label={t("Installation command")}>
           <code>{command}</code>
         </pre>
       ) : (
         <div className="install-command-placeholder">
-          Complete the settings to generate your command.
+          {t("Complete the settings to generate your command.")}
         </div>
       )}
       <ErrorBox error={error} />
@@ -391,20 +420,24 @@ function CommandPreview({
       <ol className="install-checklist">
         <li>
           <CheckCircle2 size={15} />
-          <span>Download a checksum-verified native binary.</span>
+          <span>{t("Download a checksum-verified native binary.")}</span>
         </li>
         <li>
           <CheckCircle2 size={15} />
           <span>
-            Install the selected systemd services and required dependencies.
+            {t(
+              "Install the selected systemd services and required dependencies.",
+            )}
           </span>
         </li>
         <li>
           <CheckCircle2 size={15} />
           <span>
-            {draft.role === "agent"
-              ? "Connect the node to your existing panel."
-              : "Verify the endpoint and print the panel address."}
+            {t(
+              draft.role === "agent"
+                ? "Connect the node to your existing panel."
+                : "Verify the endpoint and print the panel address.",
+            )}
           </span>
         </li>
       </ol>
@@ -412,10 +445,11 @@ function CommandPreview({
         <div className="install-signin">
           <LockKeyhole size={16} />
           <div>
-            <strong>Your first sign-in</strong>
+            <strong>{t("Your first sign-in")}</strong>
             <p>
-              Open the printed URL. Retrieve the owner access token in the same
-              SSH session:
+              {t(
+                "Open the printed URL. Retrieve the owner access token in the same SSH session:",
+              )}
             </p>
             <code>sudo cat /etc/emberdeck/owner-token</code>
           </div>
@@ -423,15 +457,16 @@ function CommandPreview({
       )}
       {draft.role !== "agent" && draft.access === "quick" && (
         <p className="install-boundary">
-          Quick URLs are temporary and change after a tunnel restart. A
-          Cloudflare connector token gives your workspace a stable address.
+          {t(
+            "Quick URLs are temporary and change after a tunnel restart. A Cloudflare connector token gives your workspace a stable address.",
+          )}
         </p>
       )}
       {draft.role !== "agent" && draft.access === "local" && (
         <div className="install-signin">
           <Terminal size={16} />
           <div>
-            <strong>SSH forwarding</strong>
+            <strong>{t("SSH forwarding")}</strong>
             <code>
               ssh -L {draft.panelPort}:127.0.0.1:{draft.panelPort}{" "}
               root@your-server

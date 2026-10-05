@@ -31,6 +31,8 @@ import {
   ErrorBox,
   Loading,
   Modal,
+  Select,
+  AnimatePresence,
   bytes,
   pretty,
   saveFile,
@@ -42,6 +44,7 @@ import { FilesPage } from "./FilesPage";
 import { LibraryPage } from "./Library";
 import { DiagnosticsPage } from "./DiagnosticsPage";
 import { publicFile } from "./assets";
+import { useTranslation, locale } from "./i18n";
 
 const tabs = [
   ["overview", "Overview", Activity],
@@ -55,6 +58,7 @@ const tabs = [
 ] as const;
 
 export default function ServerPage({ id }: { id: string }) {
+  const { t } = useTranslation();
   const { revision, navigate, runAction, assistant, can } = useWorkspace();
   const result = useApi<GameServer>(`/api/servers/${id}`, 5000, revision);
   const tab = window.location.hash.split("/")[3] || "overview";
@@ -99,7 +103,7 @@ export default function ServerPage({ id }: { id: string }) {
             }
           >
             <RotateCw size={14} />
-            Restart
+            {t("Restart")}
           </Button>
           <Button
             variant={online ? "secondary" : "primary"}
@@ -114,18 +118,18 @@ export default function ServerPage({ id }: { id: string }) {
             {online ? (
               <>
                 <Square size={12} />
-                Stop
+                {t("Stop")}
               </>
             ) : (
               <>
                 <Play size={13} />
-                Start server
+                {t("Start server")}
               </>
             )}
           </Button>
         </div>
       </div>
-      <div className="tabs" role="tablist" aria-label="Server sections">
+      <div className="tabs" role="tablist" aria-label={t("Server sections")}>
         {tabs.map(([key, label, Icon]) => (
           <button
             key={key}
@@ -135,15 +139,17 @@ export default function ServerPage({ id }: { id: string }) {
             onClick={() => navigate(`/servers/${id}/${key}`)}
           >
             <Icon size={13} />
-            {key === "packages"
-              ? ["fabric", "forge", "neoforge", "quilt"].includes(
-                  server.template,
-                )
-                ? "Mods"
-                : server.template === "arclight"
-                  ? "Mods & plugins"
-                  : "Plugins"
-              : label}
+            {t(
+              key === "packages"
+                ? ["fabric", "forge", "neoforge", "quilt"].includes(
+                    server.template,
+                  )
+                  ? "Mods"
+                  : server.template === "arclight"
+                    ? "Mods & plugins"
+                    : "Plugins"
+                : label,
+            )}
           </button>
         ))}
       </div>
@@ -151,45 +157,46 @@ export default function ServerPage({ id }: { id: string }) {
       {tab === "overview" && (
         <>
           <section className="stat-grid">
-            {[
+            {(
               [
-                Users,
-                "Players online",
-                server.snapshot.players
-                  ? String(server.snapshot.players.online)
-                  : "—",
-                `/ ${server.max_players} slots`,
-              ],
-              [
-                Cpu,
-                "CPU use",
-                `${server.snapshot.cpu_percent.toFixed(1)}%`,
-                `${server.cpu_limit} cores available`,
-              ],
-              [
-                HardDrive,
-                "Memory",
-                bytes(server.snapshot.memory_bytes),
-                `${server.memory_mb / 1024} GiB limit`,
-              ],
-              [
-                Archive,
-                "Disk use",
-                bytes(server.snapshot.disk_bytes),
-                `${server.disk_mb / 1024} GiB budget`,
-              ],
-            ].map(([Icon, label, value, foot], i) => {
-              const RenderIcon = Icon as typeof Users;
+                [
+                  Users,
+                  "Players online",
+                  server.snapshot.players
+                    ? String(server.snapshot.players.online)
+                    : "—",
+                  t("/ {{count}} slots", { count: server.max_players }),
+                ],
+                [
+                  Cpu,
+                  "CPU use",
+                  `${server.snapshot.cpu_percent.toLocaleString(locale(), { maximumFractionDigits: 1 })}%`,
+                  t("{{count}} cores available", { count: server.cpu_limit }),
+                ],
+                [
+                  HardDrive,
+                  "Memory",
+                  bytes(server.snapshot.memory_bytes),
+                  t("{{amount}} GiB limit", {
+                    amount: server.memory_mb / 1024,
+                  }),
+                ],
+                [
+                  Archive,
+                  "Disk use",
+                  bytes(server.snapshot.disk_bytes),
+                  t("{{amount}} GiB budget", { amount: server.disk_mb / 1024 }),
+                ],
+              ] as const
+            ).map(([Icon, label, value, foot]) => {
               return (
-                <div className="stat-card" key={i}>
+                <div className="stat-card" key={label}>
                   <div className="stat-label">
-                    {String(label)}
-                    <RenderIcon size={16} />
+                    {t(label)}
+                    <Icon size={16} />
                   </div>
-                  <div className="stat-number" style={{ fontSize: 27 }}>
-                    {String(value)}
-                  </div>
-                  <div className="stat-foot">{String(foot)}</div>
+                  <div className="stat-number">{value}</div>
+                  <div className="stat-foot">{foot}</div>
                 </div>
               );
             })}
@@ -198,42 +205,42 @@ export default function ServerPage({ id }: { id: string }) {
             <section className="panel">
               <header className="panel-heading">
                 <div>
-                  <h2>CPU over time</h2>
-                  <p>100% represents one fully utilized core.</p>
+                  <h2>{t("CPU over time")}</h2>
+                  <p>{t("100% represents one fully utilized core.")}</p>
                 </div>
                 <Cpu size={17} className="muted" />
               </header>
               <Chart
                 points={server.history.map((m) => ({ at: m.at, value: m.cpu }))}
                 unit="% CPU"
-                height={190}
+                height={250}
               />
             </section>
             <section className="panel settings-card">
-              <h2>A place to call home.</h2>
+              <h2>{t("A place to call home.")}</h2>
               <p style={{ marginBottom: 17 }}>
                 {server.snapshot.motd.replace(/§[0-9a-fk-or]/gi, "")}
               </p>
               <div className="credential">
-                <span>Core</span>
+                <span>{t("Core")}</span>
                 <code>
                   {pretty(server.template)} · {server.version}
                 </code>
               </div>
               <div className="credential">
-                <span>Runtime</span>
-                <code>Java {server.java || "auto-selected"}</code>
+                <span>{t("Runtime")}</span>
+                <code>Java {server.java || t("auto-selected")}</code>
               </div>
               <div className="credential">
-                <span>Environment</span>
-                <code>Docker · isolated network</code>
+                <span>{t("Environment")}</span>
+                <code>{t("Docker · isolated network")}</code>
               </div>
               <Button
                 variant="ghost"
                 style={{ marginTop: 12 }}
                 onClick={() => assistant(id)}
               >
-                Ask Ember about this server
+                {t("Ask Ember about this server")}
                 <ArrowUpRight size={14} />
               </Button>
             </section>
@@ -262,6 +269,7 @@ function Console({
   preview?: boolean;
 }) {
   const { runAction, can, navigate } = useWorkspace();
+  const { t } = useTranslation();
   const logs = useApi<{ text: string }>(
     `/api/servers/${server.id}/logs?tail=${preview ? 14 : 500}`,
     2500,
@@ -278,32 +286,32 @@ function Console({
   return (
     <div className="terminal">
       <header className="terminal-toolbar">
-        <span className="dot green" /> LIVE CONSOLE
+        <span className="dot green" /> {t("LIVE CONSOLE")}
         <div className="terminal-actions">
           {preview ? (
             <button
               className="text-button"
               onClick={() => navigate(`/servers/${server.id}/console`)}
             >
-              Open console
+              {t("Open console")}
               <ArrowUpRight size={12} />
             </button>
           ) : (
             <>
               <label
                 className="checkbox"
-                style={{ fontSize: 9, letterSpacing: 0, alignItems: "center" }}
+                style={{ letterSpacing: 0, alignItems: "center" }}
               >
                 <input
                   type="checkbox"
                   checked={auto}
                   onChange={(e) => setAuto(e.target.checked)}
                 />
-                Auto-scroll
+                {t("Auto-scroll")}
               </label>
               <button
                 className="icon-button"
-                aria-label="Download console log"
+                aria-label={t("Download console log")}
                 onClick={() =>
                   saveFile(`${server.name}.log`, logs.data?.text || "")
                 }
@@ -353,7 +361,7 @@ function Console({
             </div>
           );
         })}
-        {logs.loading && "Connecting to the node…"}
+        {logs.loading && t("Connecting to the node…")}
       </div>
       {output && <div className="console-output">{output}</div>}
       <form
@@ -375,12 +383,12 @@ function Console({
       >
         <ChevronPrompt />
         <input
-          aria-label="Console command"
-          placeholder={
+          aria-label={t("Console command")}
+          placeholder={t(
             can("console.write", server.id)
               ? "Type a command…"
-              : "Read-only console"
-          }
+              : "Read-only console",
+          )}
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           disabled={!can("console.write", server.id)}
@@ -393,7 +401,7 @@ function Console({
           disabled={!command.trim() || !can("console.write", server.id)}
         >
           <Send size={13} />
-          Send
+          {t("Send")}
         </Button>
       </form>
     </div>
@@ -408,6 +416,7 @@ function ChevronPrompt() {
 }
 
 function Packages({ server }: { server: GameServer }) {
+  const { t } = useTranslation();
   const { revision, runAction, can } = useWorkspace();
   const [browse, setBrowse] = useState(false);
   const packages = useApi<{ packages: Package[] }>(
@@ -419,7 +428,9 @@ function Packages({ server }: { server: GameServer }) {
     return (
       <>
         <div className="toolbar">
-          <Button onClick={() => setBrowse(false)}>← Installed packages</Button>
+          <Button onClick={() => setBrowse(false)}>
+            {t("← Installed packages")}
+          </Button>
         </div>
         <LibraryPage server={server} />
       </>
@@ -428,10 +439,11 @@ function Packages({ server }: { server: GameServer }) {
     <>
       <div className="toolbar">
         <span className="tag">
-          {packages.data?.packages.filter((p) => p.enabled).length || 0} ENABLED
+          {packages.data?.packages.filter((p) => p.enabled).length || 0}{" "}
+          {t("ENABLED")}
         </span>
-        <span className="muted" style={{ fontSize: 10 }}>
-          Changes take effect after a restart.
+        <span className="muted">
+          {t("Changes take effect after a restart.")}
         </span>
         <Button
           variant="primary"
@@ -439,7 +451,7 @@ function Packages({ server }: { server: GameServer }) {
           onClick={() => setBrowse(true)}
         >
           <Puzzle size={15} />
-          Browse library
+          {t("Browse library")}
         </Button>
       </div>
       <ErrorBox error={packages.error} />
@@ -450,11 +462,11 @@ function Packages({ server }: { server: GameServer }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Package</th>
-                <th>Type</th>
-                <th>Source</th>
-                <th>Size</th>
-                <th>Enabled</th>
+                <th>{t("Package")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Source")}</th>
+                <th>{t("Size")}</th>
+                <th>{t("Enabled")}</th>
               </tr>
             </thead>
             <tbody>
@@ -470,7 +482,7 @@ function Packages({ server }: { server: GameServer }) {
                     )}
                   </td>
                   <td>
-                    <span className="tag">{p.kind}</span>
+                    <span className="tag">{t(p.kind)}</span>
                   </td>
                   <td>{p.source}</td>
                   <td>{bytes(p.size)}</td>
@@ -479,7 +491,7 @@ function Packages({ server }: { server: GameServer }) {
                       className={`switch ${p.enabled ? "on" : ""}`}
                       role="switch"
                       aria-checked={p.enabled}
-                      aria-label={`Enable ${p.name}`}
+                      aria-label={t("Enable {{name}}", { name: p.name })}
                       disabled={!can("packages.write", server.id)}
                       onClick={() =>
                         void runAction(server.id, {
@@ -502,20 +514,21 @@ function Packages({ server }: { server: GameServer }) {
           description="Find plugins or mods for this exact core and Minecraft version. Required dependencies are resolved automatically."
           action={
             <Button variant="primary" onClick={() => setBrowse(true)}>
-              Browse compatible packages
+              {t("Browse compatible packages")}
             </Button>
           }
         />
       )}
       <p className="quiet">
-        Disabling renames a JAR to <code>.jar.disabled</code>. Configurations
-        are kept. Nothing is hot-unloaded.
+        {t("Disabling renames a JAR to")} <code>.jar.disabled</code>.{" "}
+        {t("Configurations are kept. Nothing is hot-unloaded.")}
       </p>
     </>
   );
 }
 
 function ServerSettings({ server }: { server: GameServer }) {
+  const { t } = useTranslation();
   const { can, notify, refresh, navigate } = useWorkspace();
   const [name, setName] = useState(server.name);
   const [memory, setMemory] = useState(server.memory_mb);
@@ -580,11 +593,11 @@ function ServerSettings({ server }: { server: GameServer }) {
         }}
       >
         <section className="panel settings-card">
-          <h2>A name. A welcome. A world.</h2>
-          <p>Server identity and connection settings.</p>
+          <h2>{t("A name. A welcome. A world.")}</h2>
+          <p>{t("Server identity and connection settings.")}</p>
           <div className="form-stack">
             <label>
-              Server name
+              {t("Server name")}
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -593,7 +606,7 @@ function ServerSettings({ server }: { server: GameServer }) {
               />
             </label>
             <label>
-              Message of the day
+              {t("Message of the day")}
               <input
                 value={motd}
                 onChange={(e) => setMotd(e.target.value)}
@@ -603,7 +616,7 @@ function ServerSettings({ server }: { server: GameServer }) {
             </label>
             <div className="form-grid">
               <label>
-                Game port
+                {t("Game port")}
                 <input
                   type="number"
                   min={1024}
@@ -613,7 +626,7 @@ function ServerSettings({ server }: { server: GameServer }) {
                 />
               </label>
               <label>
-                Maximum players
+                {t("Maximum players")}
                 <input
                   type="number"
                   min={1}
@@ -626,12 +639,12 @@ function ServerSettings({ server }: { server: GameServer }) {
           </div>
         </section>
         <section className="panel settings-card">
-          <h2>Room to grow.</h2>
-          <p>Hard CPU / memory limits and a monitored disk budget.</p>
+          <h2>{t("Room to grow.")}</h2>
+          <p>{t("Hard CPU / memory limits and a monitored disk budget.")}</p>
           <div className="form-stack">
             <div className="form-grid">
               <label>
-                Memory (MiB)
+                {t("Memory (MiB)")}
                 <input
                   type="number"
                   min={512}
@@ -641,7 +654,7 @@ function ServerSettings({ server }: { server: GameServer }) {
                 />
               </label>
               <label>
-                CPU cores
+                {t("CPU cores")}
                 <input
                   type="number"
                   min={0.25}
@@ -654,7 +667,7 @@ function ServerSettings({ server }: { server: GameServer }) {
             </div>
             <div className="form-grid">
               <label>
-                Disk budget (MiB)
+                {t("Disk budget (MiB)")}
                 <input
                   type="number"
                   min={1024}
@@ -664,22 +677,27 @@ function ServerSettings({ server }: { server: GameServer }) {
                 />
               </label>
               <label>
-                Java runtime
-                <select value={java} onChange={(e) => setJava(e.target.value)}>
-                  <option value="">Auto-select</option>
-                  {[8, 17, 21, 25].map((j) => (
-                    <option key={j} value={j}>
-                      Java {j}
-                    </option>
-                  ))}
-                </select>
+                {t("Java runtime")}
+                <Select
+                  label={t("Java runtime")}
+                  value={java}
+                  onValueChange={setJava}
+                  options={[
+                    { value: "", label: t("Auto-select") },
+                    ...[8, 17, 21, 25].map((java) => ({
+                      value: String(java),
+                      label: `Java ${java}`,
+                    })),
+                  ]}
+                />
               </label>
             </div>
             <div className="notice">
               <Info size={16} />
               <span>
-                Stop the server before changing its configuration. Its container
-                will be recreated on the next start.
+                {t(
+                  "Stop the server before changing its configuration. Its container will be recreated on the next start.",
+                )}
               </span>
             </div>
           </div>
@@ -697,19 +715,17 @@ function ServerSettings({ server }: { server: GameServer }) {
               disabled={!stopped}
             >
               <Settings size={14} />
-              Save configuration
+              {t("Save configuration")}
             </Button>
           </div>
         </div>
       </form>
-      <section
-        className="panel settings-card"
-        style={{ marginTop: 20, borderColor: "#51343b" }}
-      >
-        <h2>Remove this server</h2>
+      <section className="panel settings-card danger-zone">
+        <h2>{t("Remove this server")}</h2>
         <p>
-          Stop and remove its container. Server files are moved to a
-          deleted-server archive on the node; existing backups are kept.
+          {t(
+            "Stop and remove its container. Server files are moved to a deleted-server archive on the node; existing backups are kept.",
+          )}
         </p>
         <Button
           variant="danger"
@@ -720,51 +736,57 @@ function ServerSettings({ server }: { server: GameServer }) {
           }}
         >
           <Trash2 size={14} />
-          Remove server
+          {t("Remove server")}
         </Button>
       </section>
-      {remove && (
-        <Modal
-          title={`Remove “${server.name}”?`}
-          subtitle="The server must be stopped. Its files will be archived on the node."
-          onClose={() => setRemove(false)}
-        >
-          <label>
-            Type the server name
-            <input
-              value={confirmation}
-              onChange={(e) => setConfirmation(e.target.value)}
-              placeholder={server.name}
-            />
-          </label>
-          <div className="modal-actions">
-            <Button onClick={() => setRemove(false)}>Keep server</Button>
-            <Button
-              variant="danger"
-              disabled={confirmation !== server.name}
-              busy={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  await api(`/api/servers/${server.id}`, {
-                    method: "DELETE",
-                    body: JSON.stringify({ confirmation }),
-                  });
-                  refresh();
-                  navigate("/servers");
-                  notify("Server removed. Files archived on the node.");
-                } catch (error) {
-                  notify(String(error), true);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Remove server
-            </Button>
-          </div>
-        </Modal>
-      )}
+      <AnimatePresence>
+        {remove && (
+          <Modal
+            title={t("Remove “{{name}}”?", { name: server.name })}
+            subtitle={t(
+              "The server must be stopped. Its files will be archived on the node.",
+            )}
+            onClose={() => setRemove(false)}
+          >
+            <label>
+              {t("Type the server name")}
+              <input
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                placeholder={server.name}
+              />
+            </label>
+            <div className="modal-actions">
+              <Button onClick={() => setRemove(false)}>
+                {t("Keep server")}
+              </Button>
+              <Button
+                variant="danger"
+                disabled={confirmation !== server.name}
+                busy={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await api(`/api/servers/${server.id}`, {
+                      method: "DELETE",
+                      body: JSON.stringify({ confirmation }),
+                    });
+                    refresh();
+                    navigate("/servers");
+                    notify("Server removed. Files archived on the node.");
+                  } catch (error) {
+                    notify(String(error), true);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {t("Remove server")}
+              </Button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </>
   );
 }

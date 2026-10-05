@@ -17,7 +17,18 @@ import {
 import { api, demo, post, useApi } from "./api";
 import { useWorkspace } from "./context";
 import type { Backup, GameServer, Task, TaskInput } from "./types";
-import { Button, Empty, ErrorBox, Loading, Modal, bytes, date } from "./ui";
+import {
+  AnimatePresence,
+  Button,
+  Empty,
+  ErrorBox,
+  Loading,
+  Modal,
+  Select,
+  bytes,
+  date,
+} from "./ui";
+import { useTranslation } from "./i18n";
 
 export function ServerSelect({
   selected,
@@ -27,25 +38,25 @@ export function ServerSelect({
   onChange: (id: string) => void;
 }) {
   const { servers } = useWorkspace();
+  const { t } = useTranslation();
   return (
-    <label className="select-server">
+    <div className="select-server">
       <Server size={15} />
-      <select
-        aria-label="Select server"
+      <Select
+        label={t("Select server")}
         value={selected}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {servers.map((server) => (
-          <option key={server.id} value={server.id}>
-            {server.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        onValueChange={onChange}
+        options={servers.map((server) => ({
+          value: server.id,
+          label: server.name,
+        }))}
+      />
+    </div>
   );
 }
 
 export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
+  const { t } = useTranslation();
   const { servers, revision, runAction, can, notify } = useWorkspace();
   const [id, setId] = useState(fixedServer?.id || servers[0]?.id || "");
   const server = fixedServer || servers.find((s) => s.id === id) || servers[0];
@@ -69,12 +80,15 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
       {!fixedServer && (
         <div className="page-heading">
           <div>
-            <span className="eyebrow">KEEP THE GOOD THINGS</span>
+            <span className="eyebrow">{t("KEEP THE GOOD THINGS")}</span>
             <h1>
-              Peace of mind, on disk<span className="orange-text">.</span>
+              {t("Peace of mind, on disk")}
+              <span className="orange-text">.</span>
             </h1>
             <p>
-              Verified archives. Local or off-site. Ready when you need them.
+              {t(
+                "Verified archives. Local or off-site. Ready when you need them.",
+              )}
             </p>
           </div>
           <Archive size={25} className="muted" />
@@ -82,17 +96,15 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
       )}
       <div className="toolbar">
         {!fixedServer && <ServerSelect selected={server.id} onChange={setId} />}
-        <select
-          aria-label="Backup destination"
+        <Select
+          label={t("Backup destination")}
           value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-        >
-          {(backups.data?.destinations || ["local"]).map((d) => (
-            <option key={d} value={d}>
-              {d === "local" ? "Local storage" : d}
-            </option>
-          ))}
-        </select>
+          onValueChange={setDestination}
+          options={(backups.data?.destinations || ["local"]).map((value) => ({
+            value,
+            label: value === "local" ? t("Local storage") : value,
+          }))}
+        />
         <Button
           variant="primary"
           disabled={!can("backups.write", server.id)}
@@ -101,15 +113,15 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
           }
         >
           <Plus size={15} />
-          Create backup
+          {t("Create backup")}
         </Button>
       </div>
       <div className="notice">
         <Archive size={17} />
         <span>
-          Online backups flush and temporarily pause world saves, then resume
-          them. A SHA-256 checksum protects each archive. Restores require a
-          stopped server and create a rollback backup.
+          {t(
+            "Online backups flush and temporarily pause world saves, then resume them. A SHA-256 checksum protects each archive. Restores require a stopped server and create a rollback backup.",
+          )}
         </span>
       </div>
       <div style={{ height: 20 }} />
@@ -121,11 +133,11 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Archive</th>
-                <th>Destination</th>
-                <th>Size</th>
-                <th>Integrity</th>
-                <th>Actions</th>
+                <th>{t("Archive")}</th>
+                <th>{t("Destination")}</th>
+                <th>{t("Size")}</th>
+                <th>{t("Integrity")}</th>
+                <th>{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -145,9 +157,11 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                       ) : (
                         <Cloud size={13} />
                       )}
-                      {backup.destination}
+                      {backup.destination === "local"
+                        ? t("Local storage")
+                        : backup.destination}
                     </span>
-                    <small>{backup.remote_state}</small>
+                    <small>{t(backup.remote_state)}</small>
                   </td>
                   <td>{bytes(backup.size)}</td>
                   <td>
@@ -160,8 +174,10 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                       {demo ? (
                         <button
                           className="icon-button"
-                          title="Download backup"
-                          aria-label={`Download ${backup.name}`}
+                          title={t("Download backup")}
+                          aria-label={t("Download {{name}}", {
+                            name: backup.name,
+                          })}
                           onClick={() =>
                             notify(
                               "The demo contains sample archives. Downloads are available in your own workspace.",
@@ -174,8 +190,10 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                         <a
                           className="icon-button"
                           href={`/api/servers/${server.id}/backups/${backup.id}/download`}
-                          title="Download archive"
-                          aria-label={`Download ${backup.name}`}
+                          title={t("Download archive")}
+                          aria-label={t("Download {{name}}", {
+                            name: backup.name,
+                          })}
                         >
                           <Download size={15} />
                         </a>
@@ -185,7 +203,7 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                         onClick={() => setRestore(backup)}
                       >
                         <RotateCcw size={12} />
-                        Restore
+                        {t("Restore")}
                       </Button>
                     </div>
                   </td>
@@ -201,13 +219,15 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
           description="Create your first backup. Add an rclone remote on the node to send copies to Google Drive, S3, or another supported destination."
         />
       )}
-      {restore && (
-        <RestoreDialog
-          backup={restore}
-          server={server}
-          onClose={() => setRestore(null)}
-        />
-      )}
+      <AnimatePresence>
+        {restore && (
+          <RestoreDialog
+            backup={restore}
+            server={server}
+            onClose={() => setRestore(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -222,6 +242,7 @@ function RestoreDialog({
   onClose: () => void;
 }) {
   const { runAction } = useWorkspace();
+  const { t } = useTranslation();
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const stopped = ["offline", "crashed"].includes(server.snapshot.state);
@@ -235,15 +256,16 @@ function RestoreDialog({
         <div className="notice orange">
           <Info size={17} />
           <span>
-            The current server files will be replaced. A verified local rollback
-            backup will be created first.
+            {t(
+              "The current server files will be replaced. A verified local rollback backup will be created first.",
+            )}
           </span>
         </div>
         {!stopped && (
           <ErrorBox error="Stop the server before restoring an archive." />
         )}
         <label>
-          Type “{server.name}” to confirm
+          {t("Type “{{name}}” to confirm", { name: server.name })}
           <input
             value={confirmation}
             onChange={(e) => setConfirmation(e.target.value)}
@@ -252,7 +274,7 @@ function RestoreDialog({
         </label>
       </div>
       <div className="modal-actions">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("Cancel")}</Button>
         <Button
           variant="danger"
           disabled={!stopped || confirmation !== server.name}
@@ -269,7 +291,7 @@ function RestoreDialog({
           }}
         >
           <RotateCcw size={14} />
-          Restore backup
+          {t("Restore backup")}
         </Button>
       </div>
     </Modal>
@@ -282,6 +304,7 @@ export function AutomationsPage({
   server?: GameServer;
 }) {
   const { servers, revision, refresh, notify, can } = useWorkspace();
+  const { t } = useTranslation();
   const [id, setId] = useState(fixedServer?.id || servers[0]?.id || "");
   const server = fixedServer || servers.find((s) => s.id === id) || servers[0];
   const tasks = useApi<{ tasks: Task[] }>(
@@ -304,11 +327,12 @@ export function AutomationsPage({
       {!fixedServer && (
         <div className="page-heading">
           <div>
-            <span className="eyebrow">SET IT. LET IT HAPPEN.</span>
+            <span className="eyebrow">{t("SET IT. LET IT HAPPEN.")}</span>
             <h1>
-              A little less on your plate<span className="orange-text">.</span>
+              {t("A little less on your plate")}
+              <span className="orange-text">.</span>
             </h1>
-            <p>Thoughtful automations that know when to act.</p>
+            <p>{t("Thoughtful automations that know when to act.")}</p>
           </div>
           <Workflow size={26} className="muted" />
         </div>
@@ -317,7 +341,7 @@ export function AutomationsPage({
         {!fixedServer && <ServerSelect selected={server.id} onChange={setId} />}
         <span className="tag">
           <Clock3 size={11} />
-          &nbsp; Timezone-aware schedules
+          &nbsp; {t("Timezone-aware schedules")}
         </span>
         <Button
           variant="primary"
@@ -325,7 +349,7 @@ export function AutomationsPage({
           onClick={() => setOpen(true)}
         >
           <Plus size={15} />
-          Create automation
+          {t("Create automation")}
         </Button>
       </div>
       <ErrorBox error={tasks.error} />
@@ -350,41 +374,45 @@ export function AutomationsPage({
                   {task.input.trigger === "cron"
                     ? `${task.input.cron} · ${task.input.timezone}`
                     : task.input.trigger === "interval"
-                      ? `Every ${task.input.interval_seconds} seconds`
+                      ? t("Every {{count}} seconds", {
+                          count: task.input.interval_seconds,
+                        })
                       : task.input.trigger === "empty"
-                        ? "When the last player leaves"
+                        ? t("When the last player leaves")
                         : task.input.trigger === "player_join"
-                          ? "When a player joins"
-                          : "When a player leaves"}
+                          ? t("When a player joins")
+                          : t("When a player leaves")}
                 </p>
-                <span className="tag">{task.input.operation.kind}</span>
+                <span className="tag">{t(task.input.operation.kind)}</span>
                 {task.input.only_when_empty && (
-                  <span className="tag">Only if empty</span>
+                  <span className="tag">{t("Only if empty")}</span>
                 )}
                 {task.input.player_name && (
-                  <span className="tag">Player: {task.input.player_name}</span>
+                  <span className="tag">
+                    {t("Player: {{name}}", { name: task.input.player_name })}
+                  </span>
                 )}
                 <code>
                   {task.input.operation.kind === "command"
                     ? task.input.operation.command
                     : task.input.operation.kind === "backup"
                       ? `→ ${task.input.operation.destination}`
-                      : task.input.operation.signal}
+                      : t(task.input.operation.signal)}
                 </code>
               </div>
               <div className="task-next">
-                {task.next_run ? "NEXT RUN" : "EVENT-DRIVEN"}
+                {t(task.next_run ? "NEXT RUN" : "EVENT-DRIVEN")}
                 <span>
                   {task.next_run
                     ? date(task.next_run)
-                    : "Waiting for a player event"}
+                    : t("Waiting for a player event")}
                 </span>
               </div>
               <button
                 className={`switch ${task.input.enabled ? "on" : ""}`}
                 role="switch"
                 aria-checked={task.input.enabled}
-                aria-label={`Enable ${task.input.name}`}
+                aria-label={t("Enable {{name}}", { name: task.input.name })}
                 disabled={!can("tasks.write", server.id)}
                 onClick={async () => {
                   try {
@@ -406,7 +434,7 @@ export function AutomationsPage({
               />
               <button
                 className="icon-button"
-                aria-label={`Delete ${task.input.name}`}
+                aria-label={t("Delete {{name}}", { name: task.input.name })}
                 disabled={!can("tasks.write", server.id)}
                 onClick={() => setRemove(task)}
               >
@@ -424,40 +452,49 @@ export function AutomationsPage({
             can("tasks.write", server.id) && (
               <Button variant="primary" onClick={() => setOpen(true)}>
                 <Plus size={15} />
-                Create automation
+                {t("Create automation")}
               </Button>
             )
           }
         />
       )}
-      {open && <TaskDialog server={server} onClose={() => setOpen(false)} />}
-      {remove && (
-        <Modal
-          title={`Delete “${remove.input.name}”?`}
-          subtitle="This automation will no longer run."
-          onClose={() => setRemove(null)}
-        >
-          <div className="modal-actions">
-            <Button onClick={() => setRemove(null)}>Keep it</Button>
-            <Button
-              variant="danger"
-              onClick={async () => {
-                try {
-                  await api(`/api/servers/${server.id}/tasks/${remove.id}`, {
-                    method: "DELETE",
-                  });
-                  refresh();
-                  setRemove(null);
-                } catch (error) {
-                  notify(String(error), true);
-                }
-              }}
-            >
-              Delete automation
-            </Button>
-          </div>
-        </Modal>
-      )}
+      <AnimatePresence>
+        {open && (
+          <TaskDialog
+            key="create-task"
+            server={server}
+            onClose={() => setOpen(false)}
+          />
+        )}
+        {remove && (
+          <Modal
+            key="delete-task"
+            title={t("Delete “{{name}}”?", { name: remove.input.name })}
+            subtitle={t("This automation will no longer run.")}
+            onClose={() => setRemove(null)}
+          >
+            <div className="modal-actions">
+              <Button onClick={() => setRemove(null)}>{t("Keep it")}</Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  try {
+                    await api(`/api/servers/${server.id}/tasks/${remove.id}`, {
+                      method: "DELETE",
+                    });
+                    refresh();
+                    setRemove(null);
+                  } catch (error) {
+                    notify(String(error), true);
+                  }
+                }}
+              >
+                {t("Delete automation")}
+              </Button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -470,6 +507,7 @@ function TaskDialog({
   onClose: () => void;
 }) {
   const { notify, refresh } = useWorkspace();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [trigger, setTrigger] = useState("cron");
   const [cron, setCron] = useState("0 4 * * *");
@@ -533,42 +571,47 @@ function TaskDialog({
         }}
       >
         <label>
-          Automation name
+          {t("Automation name")}
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="A quiet-world backup"
+            placeholder={t("A quiet-world backup")}
             required
             maxLength={80}
           />
         </label>
         <label>
-          When should it run?
-          <select value={trigger} onChange={(e) => setTrigger(e.target.value)}>
-            <option value="cron">On a schedule (cron)</option>
-            <option value="interval">At a regular interval</option>
-            <option value="empty">When the last player leaves</option>
-            <option value="player_join">When a player joins</option>
-            <option value="player_leave">When a player leaves</option>
-          </select>
+          {t("When should it run?")}
+          <Select
+            label={t("When should it run?")}
+            value={trigger}
+            onValueChange={setTrigger}
+            options={[
+              { value: "cron", label: t("On a schedule (cron)") },
+              { value: "interval", label: t("At a regular interval") },
+              { value: "empty", label: t("When the last player leaves") },
+              { value: "player_join", label: t("When a player joins") },
+              { value: "player_leave", label: t("When a player leaves") },
+            ]}
+          />
         </label>
         {trigger === "cron" && (
           <div className="form-grid">
             <label>
-              Cron expression
+              {t("Cron expression")}
               <input
                 value={cron}
                 onChange={(e) => setCron(e.target.value)}
                 required
               />
               <small>
-                Minute · hour · day · month · weekday
+                {t("Minute · hour · day · month · weekday")}
                 <br />
-                Weekday: 1 = Sunday … 7 = Saturday.
+                {t("Weekday: 1 = Sunday … 7 = Saturday.")}
               </small>
             </label>
             <label>
-              Timezone
+              {t("Timezone")}
               <input
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
@@ -580,7 +623,7 @@ function TaskDialog({
         )}
         {trigger === "interval" && (
           <label>
-            Interval in seconds
+            {t("Interval in seconds")}
             <input
               type="number"
               min={30}
@@ -592,11 +635,11 @@ function TaskDialog({
         )}
         {trigger.startsWith("player") && (
           <label>
-            Only this player (optional)
+            {t("Only this player (optional)")}
             <input
               value={player}
               onChange={(e) => setPlayer(e.target.value)}
-              placeholder="Any player"
+              placeholder={t("Any player")}
               pattern="[A-Za-z0-9_]{1,16}"
             />
           </label>
@@ -607,60 +650,73 @@ function TaskDialog({
             checked={empty}
             onChange={(e) => setEmpty(e.target.checked)}
           />
-          Only run when the server has no players.
+          {t("Only run when the server has no players.")}
         </label>
         <label>
-          Then do this
-          <select value={action} onChange={(e) => setAction(e.target.value)}>
-            <option value="command">Run a Minecraft command</option>
-            <option value="backup">Create a backup</option>
-            <option value="power">Change server power</option>
-          </select>
+          {t("Then do this")}
+          <Select
+            label={t("Then do this")}
+            value={action}
+            onValueChange={setAction}
+            options={[
+              { value: "command", label: t("Run a Minecraft command") },
+              { value: "backup", label: t("Create a backup") },
+              { value: "power", label: t("Change server power") },
+            ]}
+          />
         </label>
         {action === "command" && (
           <label>
-            Command
+            {t("Command")}
             <input
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               required
             />
             <small>
-              Use {"{player}"} for the player who triggered the event.
+              {t("Use {player} for the player who triggered the event.")}
             </small>
           </label>
         )}
         {action === "backup" && (
           <label>
-            Backup destination
-            <select
+            {t("Backup destination")}
+            <Select
+              label={t("Backup destination")}
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-            >
-              {(backups.data?.destinations || ["local"]).map((d) => (
-                <option key={d}>{d}</option>
-              ))}
-            </select>
+              onValueChange={setDestination}
+              options={(backups.data?.destinations || ["local"]).map(
+                (value) => ({
+                  value,
+                  label: value === "local" ? t("Local storage") : value,
+                }),
+              )}
+            />
           </label>
         )}
         {action === "power" && (
           <label>
-            Power action
-            <select value={signal} onChange={(e) => setSignal(e.target.value)}>
-              <option value="restart">Restart</option>
-              <option value="stop">Stop</option>
-              <option value="start">Start</option>
-            </select>
+            {t("Power action")}
+            <Select
+              label={t("Power action")}
+              value={signal}
+              onValueChange={setSignal}
+              options={[
+                { value: "restart", label: t("Restart") },
+                { value: "stop", label: t("Stop") },
+                { value: "start", label: t("Start") },
+              ]}
+            />
           </label>
         )}
         <ErrorBox error={error} />
         <div className="modal-actions">
           <Button type="button" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button type="submit" variant="primary" busy={busy}>
             <Workflow size={14} />
-            Create automation
+            {t("Create automation")}
           </Button>
         </div>
       </form>

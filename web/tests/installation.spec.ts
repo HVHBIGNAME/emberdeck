@@ -60,7 +60,10 @@ test("installation profiles validate URLs and ports and support agent-only setup
   await expect(page.getByLabel("Installation command")).toContainText(
     "--panel-port 18080",
   );
-  await page.getByLabel("Components", { exact: true }).selectOption("agent");
+  await page.getByRole("combobox", { name: "Components", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Minecraft node only · connect to a panel" })
+    .click();
   await expect(page.getByLabel("Installation command")).toContainText(
     "--mode 'agent'",
   );
@@ -77,9 +80,7 @@ test("the installation guide is accessible before sign-in", async ({
     route.fulfill({ status: 401, json: { error: "Authentication required" } }),
   );
   await page.goto("/");
-  await page
-    .getByRole("link", { name: "Install or connect a workspace" })
-    .click();
+  await page.getByRole("link", { name: "Install on another host" }).click();
   await expect(
     page.getByRole("heading", { name: "One command. Your choice." }),
   ).toBeVisible();

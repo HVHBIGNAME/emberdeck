@@ -11,7 +11,20 @@ import {
 import { api, useApi, useDebounce } from "./api";
 import { useWorkspace } from "./context";
 import type { GameServer, Project, ProjectVersion } from "./types";
-import { Button, Empty, ErrorBox, Loading, Modal, pretty } from "./ui";
+import {
+  AnimatePresence,
+  Button,
+  Empty,
+  ErrorBox,
+  Loading,
+  Modal,
+  Select,
+  bytes,
+  pretty,
+} from "./ui";
+import { locale, useTranslation } from "./i18n";
+import { motion } from "motion/react";
+import { usePreferences } from "./Preferences";
 
 interface Release {
   id: number;
@@ -21,6 +34,8 @@ interface Release {
   assets: { id: number; name: string; size: number }[];
 }
 export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
+  const { t } = useTranslation();
+  const { motion: animated } = usePreferences();
   const { servers, runAction, can, notify, newServer } = useWorkspace();
   const [selectedServer, setSelectedServer] = useState(
     fixedServer?.id || servers[0]?.id || "",
@@ -62,44 +77,35 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
         description="Create a Minecraft server first. The library automatically filters packages by its game version and loader."
       />
     );
-  if (!choices.length)
-    return (
-      <Empty
-        icon={<Puzzle />}
-        title="Pure Minecraft"
-        description="Vanilla doesn't load plugins or mods. Create a Paper or Fabric server to use the package library."
-      />
-    );
   return (
     <>
       {!fixedServer && (
         <div className="page-heading">
           <div>
-            <span className="eyebrow">MAKE IT YOUR OWN</span>
+            <span className="eyebrow">{t("MAKE IT YOUR OWN")}</span>
             <h1>
-              A world of possibilities<span className="orange-text">.</span>
+              {t("A world of possibilities")}
+              <span className="orange-text">.</span>
             </h1>
-            <p>Discover packages that belong on your server.</p>
+            <p>{t("Discover packages that belong on your server.")}</p>
           </div>
-          <span className="tag">LIVE PROVIDER CATALOG</span>
+          <span className="tag">{t("LIVE PROVIDER CATALOG")}</span>
         </div>
       )}
       <div className="toolbar">
         {!fixedServer && (
-          <label className="select-server">
+          <div className="select-server">
             <Puzzle size={15} />
-            <select
-              aria-label="Target server"
+            <Select
+              label={t("Target server")}
               value={target.id}
-              onChange={(e) => setSelectedServer(e.target.value)}
-            >
-              {servers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onValueChange={setSelectedServer}
+              options={servers.map((server) => ({
+                value: server.id,
+                label: server.name,
+              }))}
+            />
+          </div>
         )}
         <div className="segment">
           {["modrinth", "github"].map((s) => (
@@ -120,23 +126,25 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
                 className={effectiveKind === k ? "active" : ""}
                 onClick={() => setKind(k)}
               >
-                {k === "mod"
-                  ? "Mods"
-                  : k === "modpack"
-                    ? "Modpacks"
-                    : "Plugins"}
+                {t(
+                  k === "mod"
+                    ? "Mods"
+                    : k === "modpack"
+                      ? "Modpacks"
+                      : "Plugins",
+                )}
               </button>
             ))}
           </div>
         )}
-        {source === "modrinth" && (
+        {source === "modrinth" && choices.length > 0 && (
           <div className="search-field">
             <Search size={16} />
             <input
-              aria-label="Search packages"
+              aria-label={t("Search packages")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${effectiveKind}s…`}
+              placeholder={t(`Search ${effectiveKind}s…`)}
             />
           </div>
         )}
@@ -144,10 +152,19 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
       <div className="compatibility">
         <ShieldCheck size={14} />
         {source === "modrinth"
-          ? `Filtered for ${pretty(target.template)} · Minecraft ${target.version} · server-side support`
-          : "GitHub releases require a manual compatibility check."}
+          ? t(
+              "Filtered for {{core}} · Minecraft {{version}} · server-side support",
+              { core: pretty(target.template), version: target.version },
+            )
+          : t("GitHub releases require a manual compatibility check.")}
       </div>
-      {source === "modrinth" ? (
+      {!choices.length ? (
+        <Empty
+          icon={<Puzzle />}
+          title="Pure Minecraft"
+          description="Vanilla doesn't load plugins or mods. Create a Paper or Fabric server to use the package library."
+        />
+      ) : source === "modrinth" ? (
         <>
           <ErrorBox
             error={results.error}
@@ -157,82 +174,99 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
             <Loading />
           ) : results.data?.hits.length ? (
             <div className="package-grid">
-              {results.data.hits.map((p) => (
-                <article className="panel package-card" key={p.project_id}>
-                  <div className="package-heading">
-                    <span className="package-avatar">
-                      {p.icon_url ? (
-                        <img src={p.icon_url} alt="" loading="lazy" />
-                      ) : (
-                        p.title[0]
-                      )}
-                    </span>
-                    <div>
-                      <h3>{p.title}</h3>
-                      <small>by {p.author}</small>
+              <AnimatePresence>
+                {results.data.hits.map((p, index) => (
+                  <motion.article
+                    className="panel package-card"
+                    key={p.project_id}
+                    layout={animated ? "position" : false}
+                    initial={animated ? { opacity: 0, y: 14 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: animated ? 0.22 : 0,
+                      delay: animated ? Math.min(index, 5) * 0.035 : 0,
+                    }}
+                  >
+                    <div className="package-heading">
+                      <span className="package-avatar">
+                        {p.icon_url ? (
+                          <img src={p.icon_url} alt="" loading="lazy" />
+                        ) : (
+                          p.title[0]
+                        )}
+                      </span>
+                      <div>
+                        <h3>{p.title}</h3>
+                        <small>
+                          {t("by {{author}}", { author: p.author })}
+                        </small>
+                      </div>
                     </div>
-                  </div>
-                  <p>
-                    {p.description.slice(0, 155)}
-                    {p.description.length > 155 && "…"}
-                  </p>
-                  <div className="package-tags">
-                    {p.categories
-                      .filter(
-                        (c) =>
-                          ![
-                            "bukkit",
-                            "spigot",
-                            "paper",
-                            "fabric",
-                            "forge",
-                            "neoforge",
-                            "folia",
-                            "quilt",
-                            "purpur",
-                            "velocity",
-                            "bungeecord",
-                            "waterfall",
-                          ].includes(c),
-                      )
-                      .slice(0, 3)
-                      .map((c) => (
-                        <span key={c} className="tag">
-                          {c}
-                        </span>
-                      ))}
-                  </div>
-                  <footer>
-                    <span>
-                      <Download size={12} />
-                      {Intl.NumberFormat("en", {
-                        notation: "compact",
-                        maximumFractionDigits: 1,
-                      }).format(p.downloads)}
-                    </span>
-                    <Button
-                      onClick={() =>
-                        effectiveKind === "modpack"
-                          ? newServer(target.template, p.slug, target.version)
-                          : setProject(p)
-                      }
-                      disabled={
-                        !can(
-                          effectiveKind === "modpack"
-                            ? "admin"
-                            : "packages.write",
-                          target.id,
+                    <p>
+                      {p.description.slice(0, 155)}
+                      {p.description.length > 155 && "…"}
+                    </p>
+                    <div className="package-tags">
+                      {p.categories
+                        .filter(
+                          (c) =>
+                            ![
+                              "bukkit",
+                              "spigot",
+                              "paper",
+                              "fabric",
+                              "forge",
+                              "neoforge",
+                              "folia",
+                              "quilt",
+                              "purpur",
+                              "velocity",
+                              "bungeecord",
+                              "waterfall",
+                            ].includes(c),
                         )
-                      }
-                    >
-                      <PackagePlus size={13} />
-                      {effectiveKind === "modpack"
-                        ? "Create server"
-                        : "Install"}
-                    </Button>
-                  </footer>
-                </article>
-              ))}
+                        .slice(0, 3)
+                        .map((c) => (
+                          <span key={c} className="tag">
+                            {c}
+                          </span>
+                        ))}
+                    </div>
+                    <footer>
+                      <span>
+                        <Download size={12} />
+                        {Intl.NumberFormat(locale(), {
+                          notation: "compact",
+                          maximumFractionDigits: 1,
+                        }).format(p.downloads)}
+                      </span>
+                      <Button
+                        onClick={() =>
+                          effectiveKind === "modpack"
+                            ? newServer(target.template, p.slug, target.version)
+                            : setProject(p)
+                        }
+                        disabled={
+                          !can(
+                            effectiveKind === "modpack"
+                              ? "admin"
+                              : "packages.write",
+                            target.id,
+                          )
+                        }
+                      >
+                        <PackagePlus size={13} />
+                        {t(
+                          effectiveKind === "modpack"
+                            ? "Create server"
+                            : "Install",
+                        )}
+                      </Button>
+                    </footer>
+                  </motion.article>
+                ))}
+              </AnimatePresence>
             </div>
           ) : (
             <Empty
@@ -269,7 +303,7 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
             <div className="search-field">
               <Github size={17} />
               <input
-                aria-label="GitHub repository"
+                aria-label={t("GitHub repository")}
                 placeholder="owner/repository"
                 value={repository}
                 onChange={(e) => setRepository(e.target.value)}
@@ -277,16 +311,16 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
               />
             </div>
             <Button type="submit" busy={githubBusy}>
-              Find releases
+              {t("Find releases")}
             </Button>
           </form>
           <ErrorBox error={githubError} />
           <div className="notice orange">
             <Info size={16} />
             <span>
-              GitHub doesn't declare Minecraft or loader compatibility. Check
-              the release notes before installing. Only JAR assets are accepted;
-              publisher checksums are verified when available.
+              {t(
+                "GitHub doesn't declare Minecraft or loader compatibility. Check the release notes before installing. Only JAR assets are accepted; publisher checksums are verified when available.",
+              )}
             </span>
           </div>
           <div style={{ height: 20 }} />
@@ -299,7 +333,7 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
               <header className="panel-heading">
                 <h2>{release.name || release.tag_name}</h2>
                 <span className="tag">
-                  {release.prerelease ? "Pre-release" : release.tag_name}
+                  {release.prerelease ? t("Pre-release") : release.tag_name}
                 </span>
               </header>
               <div className="activity-list">
@@ -310,7 +344,7 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
                       <PackagePlus size={17} />
                       <div>
                         <strong>{a.name}</strong>
-                        <span>{(a.size / 1024 ** 2).toFixed(1)} MiB</span>
+                        <span>{bytes(a.size)}</span>
                       </div>
                       <Button
                         style={{ marginLeft: "auto" }}
@@ -320,7 +354,7 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
                         }}
                         disabled={!can("packages.write", target.id)}
                       >
-                        Install
+                        {t("Install")}
                       </Button>
                     </div>
                   ))}
@@ -336,64 +370,70 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
           )}
         </>
       )}
-      {project && (
-        <InstallProject
-          project={project}
-          server={target}
-          kind={effectiveKind}
-          onClose={() => setProject(null)}
-        />
-      )}
-      {asset && (
-        <Modal
-          title="Install a GitHub release"
-          subtitle={asset.name}
-          onClose={() => setAsset(null)}
-        >
-          <div className="notice">
-            <Github size={17} />
-            <span>
-              {repository}
-              <br />
-              Target: {target.name} · {pretty(target.template)} {target.version}
-            </span>
-          </div>
-          <div style={{ height: 20 }} />
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
-            I've checked that this release supports my Minecraft version and
-            loader.
-          </label>
-          <div className="modal-actions">
-            <Button onClick={() => setAsset(null)}>Cancel</Button>
-            <Button
-              variant="primary"
-              disabled={!confirmed}
-              onClick={async () => {
-                const result = await runAction(target.id, {
-                  action: "install_github",
-                  repository,
-                  asset_id: asset.id,
-                  kind: effectiveKind,
-                  confirm_compatibility: true,
-                });
-                if (result) {
-                  setAsset(null);
-                  notify(
-                    "Installation queued. Review its result before restarting.",
-                  );
-                }
-              }}
-            >
-              Install release
-            </Button>
-          </div>
-        </Modal>
-      )}
+      <AnimatePresence>
+        {project && (
+          <InstallProject
+            key="modrinth-install"
+            project={project}
+            server={target}
+            kind={effectiveKind}
+            onClose={() => setProject(null)}
+          />
+        )}
+        {asset && (
+          <Modal
+            key="github-install"
+            title="Install a GitHub release"
+            subtitle={asset.name}
+            onClose={() => setAsset(null)}
+          >
+            <div className="notice">
+              <Github size={17} />
+              <span>
+                {repository}
+                <br />
+                {t("Target:")} {target.name} · {pretty(target.template)}{" "}
+                {target.version}
+              </span>
+            </div>
+            <div style={{ height: 20 }} />
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+              />
+              {t(
+                "I've checked that this release supports my Minecraft version and loader.",
+              )}
+            </label>
+            <div className="modal-actions">
+              <Button onClick={() => setAsset(null)}>{t("Cancel")}</Button>
+              <Button
+                variant="primary"
+                disabled={!confirmed}
+                onClick={async () => {
+                  const result = await runAction(target.id, {
+                    action: "install_github",
+                    repository,
+                    asset_id: asset.id,
+                    kind: effectiveKind,
+                    confirm_compatibility: true,
+                  });
+                  if (result) {
+                    setAsset(null);
+                    notify(
+                      "Installation queued. Review its result before restarting.",
+                    );
+                  }
+                }}
+              >
+                {t("Install release")}
+              </Button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -410,6 +450,7 @@ function InstallProject({
   onClose: () => void;
 }) {
   const { runAction } = useWorkspace();
+  const { t } = useTranslation();
   const [version, setVersion] = useState("");
   const [busy, setBusy] = useState(false);
   const versions = useApi<{ versions: ProjectVersion[] }>(
@@ -419,7 +460,7 @@ function InstallProject({
   const selected = versions.data?.versions.find((v) => v.id === chosen);
   return (
     <Modal
-      title={`Install ${project.title}`}
+      title={t("Install {{name}}", { name: project.title })}
       subtitle={`${server.name} · ${pretty(server.template)} ${server.version}`}
       onClose={onClose}
     >
@@ -430,41 +471,44 @@ function InstallProject({
           <Loading />
         ) : (
           <label>
-            Compatible version
-            <select value={chosen} onChange={(e) => setVersion(e.target.value)}>
-              {versions.data?.versions.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} · {v.version_type}
-                </option>
-              ))}
-            </select>
+            {t("Compatible version")}
+            <Select
+              label={t("Compatible version")}
+              value={chosen}
+              onValueChange={setVersion}
+              options={(versions.data?.versions || []).map((version) => ({
+                value: version.id,
+                label: `${version.name} · ${t(version.version_type)}`,
+              }))}
+            />
           </label>
         )}
         <div className="notice">
           <ShieldCheck size={16} />
           <span>
-            Downloads are verified against Modrinth's SHA-512 checksum. Required
-            dependencies are resolved for the same loader and Minecraft version.
+            {t(
+              "Downloads are verified against Modrinth's SHA-512 checksum. Required dependencies are resolved for the same loader and Minecraft version.",
+            )}
             {selected && (
               <>
                 <br />
-                {
-                  selected.dependencies.filter(
+                {t("Required dependencies: {{count}}", {
+                  count: selected.dependencies.filter(
                     (d) => d.dependency_type === "required",
-                  ).length
-                }{" "}
-                required dependencies declared.
+                  ).length,
+                })}
               </>
             )}
           </span>
         </div>
-        <p style={{ fontSize: 10 }}>
-          A restart is required after installation. Compatibility metadata and
-          static checks are not a guarantee of safety.
+        <p>
+          {t(
+            "A restart is required after installation. Compatibility metadata and static checks are not a guarantee of safety.",
+          )}
         </p>
       </div>
       <div className="modal-actions">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("Cancel")}</Button>
         <Button
           variant="primary"
           busy={busy}
@@ -482,7 +526,7 @@ function InstallProject({
           }}
         >
           <Download size={14} />
-          Install package
+          {t("Install package")}
         </Button>
       </div>
     </Modal>

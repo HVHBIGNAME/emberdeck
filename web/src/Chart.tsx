@@ -1,4 +1,7 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { motion } from "motion/react";
+import { useTranslation, locale } from "./i18n";
+import { usePreferences } from "./Preferences";
 
 export function Sparkline({
   values,
@@ -31,32 +34,49 @@ export function Sparkline({
 
 export function Chart({
   points,
-  color = "#efa16f",
+  color = "var(--orange)",
   unit = "players",
-  height = 170,
+  height = 250,
 }: {
   points: { at: number; value: number }[];
   color?: string;
   unit?: string;
   height?: number;
 }) {
+  const { t } = useTranslation();
+  const { motion: animated } = usePreferences();
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(740);
   const id = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
+  const populated = points.length > 0;
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(Math.max(240, Math.round(entry.contentRect.width))),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [populated]);
   if (!points.length)
     return (
       <div className="chart-empty" style={{ height }}>
-        Metrics appear after the first node observation.
+        {t("Metrics appear after the first node observation.")}
       </div>
     );
   const max = Math.max(
     4,
     Math.ceil(Math.max(...points.map((p) => p.value)) / 4) * 4,
   );
-  const width = 740;
   const top = 12;
   const bottom = height - 25;
-  const left = 30;
+  const left = 42;
   const right = width - 14;
+  const tickCount = Math.min(
+    points.length,
+    Math.max(2, Math.min(6, Math.floor((right - left) / 115) + 1)),
+  );
   const x = (i: number) =>
     left + (i / Math.max(points.length - 1, 1)) * (right - left);
   const y = (value: number) => bottom - (value / max) * (bottom - top);
@@ -68,15 +88,19 @@ export function Chart({
   const area = `${line} L${right},${bottom} L${left},${bottom} Z`;
   const selected = Math.min(hover ?? points.length - 1, points.length - 1);
   const selectedTime = new Date(points[selected].at * 1000).toLocaleTimeString(
-    [],
+    locale(),
     {
       hour: "2-digit",
       minute: "2-digit",
     },
   );
   return (
-    <div className="chart">
-      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <div className="chart" ref={ref}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ height }}
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity=".17" />
@@ -99,8 +123,11 @@ export function Chart({
           </g>
         ))}
         <path d={area} fill={`url(#${id})`} />
-        <path
+        <motion.path
           d={line}
+          initial={animated ? { pathLength: 0 } : false}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: animated ? 0.9 : 0, ease: "easeOut" }}
           fill="none"
           stroke={color}
           strokeWidth="2.2"
@@ -131,22 +158,28 @@ export function Chart({
           r="2.8"
           fill={color}
         />
-        {[0, 1, 2, 3, 4, 5].map((i) => {
-          const index = Math.round((i / 5) * (points.length - 1));
+        {Array.from({ length: tickCount }, (_, i) => {
+          const last = tickCount - 1;
+          const index = Math.round(
+            (i / Math.max(last, 1)) * (points.length - 1),
+          );
           return (
             <text
               key={i}
               x={x(index)}
               y={height - 3}
-              textAnchor={i === 0 ? "start" : i === 5 ? "end" : "middle"}
+              textAnchor={i === 0 ? "start" : i === last ? "end" : "middle"}
             >
-              {i === 5
-                ? "Now"
-                : new Date(points[index].at * 1000).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  })}
+              {i === last
+                ? t("Now")
+                : new Date(points[index].at * 1000).toLocaleTimeString(
+                    locale(),
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    },
+                  )}
             </text>
           );
         })}
@@ -157,8 +190,12 @@ export function Chart({
         min={0}
         max={points.length - 1}
         value={selected}
-        aria-label={`${unit} history`}
-        aria-valuetext={`${points[selected].value.toFixed(0)} ${unit} at ${selectedTime}`}
+        aria-label={t("{{unit}} history", { unit: t(unit) })}
+        aria-valuetext={t("{{value}} {{unit}} at {{time}}", {
+          value: points[selected].value.toFixed(0),
+          unit: t(unit),
+          time: selectedTime,
+        })}
         onChange={(event) => setHover(Number(event.target.value))}
         onFocus={() => setHover(selected)}
         onBlur={() => setHover(null)}
@@ -183,8 +220,8 @@ export function Chart({
       />
       {hover !== null && (
         <div className="chart-tooltip">
-          {points[selected].value.toFixed(0)} {unit}{" "}
-          <span>at {selectedTime}</span>
+          {points[selected].value.toFixed(0)} {t(unit)}{" "}
+          <span>{t("at {{time}}", { time: selectedTime })}</span>
         </div>
       )}
     </div>
