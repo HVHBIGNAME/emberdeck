@@ -87,9 +87,9 @@ test("turning animations off stops CSS and route animations without losing the p
   page,
 }) => {
   await page.goto("/demo#/settings");
-  await expect(page.locator(".scene-glow").first()).toHaveCSS(
+  await expect(page.locator(".scene-photo").first()).toHaveCSS(
     "animation-name",
-    "ambient-drift",
+    "landscape-breathe",
   );
   const toggle = page.getByRole("switch", { name: "Animations", exact: true });
   await toggle.click();
@@ -173,7 +173,7 @@ test("background images are resized, kept local, persisted and removable", async
   await expect(
     page.getByRole("radio", { name: "Your image", exact: true }),
   ).toBeChecked();
-  await expect(page.locator(".scene-image")).toHaveCSS(
+  await expect(page.locator(".scene-custom .scene-image")).toHaveCSS(
     "background-image",
     /data:image\/webp;base64/,
   );

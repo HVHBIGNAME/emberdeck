@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation, locale } from "./i18n";
 import { usePreferences } from "./Preferences";
+import { smoothPath } from "./chart-path";
 
 export function Sparkline({
   values,
@@ -12,16 +13,16 @@ export function Sparkline({
 }) {
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
-  const points = values
-    .map(
-      (v, i) =>
-        `${(i / Math.max(values.length - 1, 1)) * 110},${35 - ((v - min) / Math.max(max - min, 1)) * 29}`,
-    )
-    .join(" ");
+  const path = smoothPath(
+    values.map((value, i) => ({
+      x: (i / Math.max(values.length - 1, 1)) * 110,
+      y: 35 - ((value - min) / Math.max(max - min, 1)) * 29,
+    })),
+  );
   return (
     <svg className="sparkline" viewBox="0 0 110 40" aria-hidden="true">
-      <polyline
-        points={points}
+      <path
+        d={path}
         stroke={color}
         fill="none"
         strokeWidth="1.8"
@@ -80,11 +81,9 @@ export function Chart({
   const x = (i: number) =>
     left + (i / Math.max(points.length - 1, 1)) * (right - left);
   const y = (value: number) => bottom - (value / max) * (bottom - top);
-  const line = points
-    .map(
-      (p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`,
-    )
-    .join(" ");
+  const line = smoothPath(
+    points.map((point, i) => ({ x: x(i), y: y(point.value) })),
+  );
   const area = `${line} L${right},${bottom} L${left},${bottom} Z`;
   const selected = Math.min(hover ?? points.length - 1, points.length - 1);
   const selectedTime = new Date(points[selected].at * 1000).toLocaleTimeString(

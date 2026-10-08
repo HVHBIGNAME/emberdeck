@@ -1,124 +1,110 @@
-import { useEffect } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { useMedia, usePreferences } from "./Preferences";
+import { cursorGeometry, type CursorTarget } from "./cursor-geometry";
+import { useCursorTracking } from "./useCursorTracking";
+
+function useChannel(initial: number) {
+  const raw = useMotionValue(initial);
+  const smooth = useSpring(raw, { stiffness: 620, damping: 46, mass: 0.75 });
+  return useMemo(() => ({ raw, smooth }), [raw, smooth]);
+}
 
 export function FocusCursor() {
   const { preferences, motion: animated, reducedMotion } = usePreferences();
   const finePointer = useMedia("(pointer: fine) and (hover: hover)");
   const enabled = preferences.cursor && finePointer && !reducedMotion;
-  const x = useMotionValue(-1000),
-    y = useMotionValue(-1000);
-  const width = useMotionValue(22),
-    height = useMotionValue(22),
-    radius = useMotionValue(12);
+  const x = useChannel(-1000),
+    y = useChannel(-1000),
+    width = useChannel(16),
+    height = useChannel(16);
+  const tlx = useChannel(8),
+    trx = useChannel(8),
+    brx = useChannel(8),
+    blx = useChannel(8);
+  const tly = useChannel(8),
+    try_ = useChannel(8),
+    bry = useChannel(8),
+    bly = useChannel(8);
+  const corners = useMemo(
+    () => [tlx, trx, brx, blx, tly, try_, bry, bly],
+    [tlx, trx, brx, blx, tly, try_, bry, bly],
+  );
+  const borderRadius = useTransform(
+    corners.map((corner) => (animated ? corner.smooth : corner.raw)),
+    (values) =>
+      `${values
+        .slice(0, 4)
+        .map((v) => `${v}px`)
+        .join(" ")} / ${values
+        .slice(4)
+        .map((v) => `${v}px`)
+        .join(" ")}`,
+  );
   const dotX = useMotionValue(-1000),
-    dotY = useMotionValue(-1000),
-    opacity = useMotionValue(0);
-  const spring = { stiffness: 480, damping: 38, mass: 0.55 };
-  const sx = useSpring(x, spring),
-    sy = useSpring(y, spring);
-  const sw = useSpring(width, spring),
-    sh = useSpring(height, spring),
-    sr = useSpring(radius, spring);
-
-  useEffect(() => {
-    if (!enabled) return;
-    let frame = 0;
-    let px = -1000,
-      py = -1000;
-    const root = document.documentElement;
-    const render = () => {
-      frame = 0;
-      const hit = document.elementFromPoint(px, py);
-      const target = hit?.closest<HTMLElement>(
-        'button, a[href], summary, [role="option"], [role="combobox"], [role="switch"], input, textarea, label:has(> input[type="radio"]), label:has(> input[type="checkbox"])',
-      );
-      const native =
-        target?.matches(
-          'input:not([type="checkbox"]):not([type="radio"]), textarea, :disabled',
-        ) || target?.getAttribute("aria-disabled") === "true";
-      root.dataset.cursor = native ? "native" : "custom";
-      opacity.set(native ? 0 : 1);
+    dotY = useMotionValue(-1000);
+  const opacity = useMotionValue(0),
+    dotOpacity = useMotionValue(0);
+  const primed = useRef(false);
+  const hide = useCallback(() => {
+    opacity.set(0);
+    dotOpacity.set(0);
+    primed.current = false;
+    delete document.documentElement.dataset.cursor;
+  }, [opacity, dotOpacity]);
+  const draw = useCallback(
+    (px: number, py: number, target: CursorTarget) => {
+      document.documentElement.dataset.cursor = target.native
+        ? "native"
+        : "custom";
       dotX.set(px - 2);
       dotY.set(py - 2);
-      if (target && !native) {
-        const rect = target.getBoundingClientRect();
-        x.set(rect.left - 4);
-        y.set(rect.top - 4);
-        width.set(rect.width + 8);
-        height.set(rect.height + 8);
-        radius.set(
-          Math.max(
-            8,
-            parseFloat(getComputedStyle(target).borderTopLeftRadius) + 4,
-          ),
-        );
-      } else {
-        x.set(px - 11);
-        y.set(py - 11);
-        width.set(22);
-        height.set(22);
-        radius.set(12);
+      dotOpacity.set(target.native ? 0 : 1);
+      opacity.set(target.native ? 0 : target.element ? 1 : 0.35);
+      const box = target.element
+        ? cursorGeometry(target.element)
+        : {
+            x: px - 8,
+            y: py - 8,
+            width: 16,
+            height: 16,
+            radii: [8, 8, 8, 8, 8, 8, 8, 8],
+          };
+      x.raw.set(box.x);
+      y.raw.set(box.y);
+      width.raw.set(box.width);
+      height.raw.set(box.height);
+      corners.forEach((corner, i) => corner.raw.set(box.radii[i]));
+      if (!primed.current) {
+        x.smooth.jump(box.x);
+        y.smooth.jump(box.y);
+        width.smooth.jump(box.width);
+        height.smooth.jump(box.height);
+        corners.forEach((corner, i) => corner.smooth.jump(box.radii[i]));
       }
-    };
-    const schedule = () => {
-      if (!frame && px >= 0) frame = requestAnimationFrame(render);
-    };
-    const move = (event: PointerEvent) => {
-      if (event.pointerType !== "mouse") return;
-      px = event.clientX;
-      py = event.clientY;
-      schedule();
-    };
-    const hide = () => {
-      cancelAnimationFrame(frame);
-      frame = 0;
-      px = -1000;
-      py = -1000;
-      opacity.set(0);
-      delete root.dataset.cursor;
-    };
-    window.addEventListener("pointermove", move, { passive: true });
-    window.addEventListener("pointerdown", schedule, { passive: true });
-    window.addEventListener("keydown", hide);
-    window.addEventListener("scroll", schedule, {
-      passive: true,
-      capture: true,
-    });
-    window.addEventListener("resize", schedule);
-    window.addEventListener("blur", hide);
-    document.documentElement.addEventListener("pointerleave", hide);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerdown", schedule);
-      window.removeEventListener("keydown", hide);
-      window.removeEventListener("scroll", schedule, true);
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("blur", hide);
-      document.documentElement.removeEventListener("pointerleave", hide);
-      hide();
-    };
-  }, [enabled, x, y, width, height, radius, dotX, dotY, opacity]);
-
+      primed.current = !target.native;
+    },
+    [x, y, width, height, corners, dotX, dotY, dotOpacity, opacity],
+  );
+  useCursorTracking(enabled, draw, hide);
   if (!enabled) return null;
   return createPortal(
     <div className="focus-cursor" aria-hidden="true">
       <motion.div
         className="cursor-outline"
         style={{
-          x: animated ? sx : x,
-          y: animated ? sy : y,
-          width: animated ? sw : width,
-          height: animated ? sh : height,
-          borderRadius: animated ? sr : radius,
+          x: animated ? x.smooth : x.raw,
+          y: animated ? y.smooth : y.raw,
+          width: animated ? width.smooth : width.raw,
+          height: animated ? height.smooth : height.raw,
+          borderRadius,
           opacity,
         }}
       />
       <motion.div
         className="cursor-dot"
-        style={{ x: dotX, y: dotY, opacity }}
+        style={{ x: dotX, y: dotY, opacity: dotOpacity }}
       />
     </div>,
     document.body,

@@ -311,6 +311,7 @@ function ProfileChoices({
       {accessProfiles.map((profile) => (
         <label
           className={`install-profile ${access === profile.id ? "selected" : ""}`}
+          data-cursor-scope="choice"
           key={profile.id}
         >
           <span className="install-profile-heading">

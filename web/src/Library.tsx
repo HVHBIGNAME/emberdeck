@@ -25,6 +25,7 @@ import {
 import { locale, useTranslation } from "./i18n";
 import { motion } from "motion/react";
 import { usePreferences } from "./Preferences";
+import { SegmentedControl } from "./SegmentedControl";
 
 interface Release {
   id: number;
@@ -107,35 +108,31 @@ export function LibraryPage({ server: fixedServer }: { server?: GameServer }) {
             />
           </div>
         )}
-        <div className="segment">
-          {["modrinth", "github"].map((s) => (
-            <button
-              key={s}
-              className={source === s ? "active" : ""}
-              onClick={() => setSource(s)}
-            >
-              {s === "modrinth" ? "Modrinth" : "GitHub"}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t("Package source")}
+          value={source}
+          onChange={setSource}
+          options={[
+            { value: "modrinth", label: "Modrinth" },
+            { value: "github", label: "GitHub" },
+          ]}
+        />
         {choices.length > 1 && (
-          <div className="segment">
-            {choices.map((k) => (
-              <button
-                key={k}
-                className={effectiveKind === k ? "active" : ""}
-                onClick={() => setKind(k)}
-              >
-                {t(
-                  k === "mod"
-                    ? "Mods"
-                    : k === "modpack"
-                      ? "Modpacks"
-                      : "Plugins",
-                )}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            label={t("Package type")}
+            value={effectiveKind}
+            onChange={setKind}
+            options={choices.map((value) => ({
+              value,
+              label: t(
+                value === "mod"
+                  ? "Mods"
+                  : value === "modpack"
+                    ? "Modpacks"
+                    : "Plugins",
+              ),
+            }))}
+          />
         )}
         {source === "modrinth" && choices.length > 0 && (
           <div className="search-field">

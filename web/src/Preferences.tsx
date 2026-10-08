@@ -81,7 +81,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     root.style.colorScheme = theme;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "dark" ? "#0e131b" : "#f3f6f7");
+      ?.setAttribute("content", theme === "dark" ? "#101417" : "#f1f2ef");
     void i18n.changeLanguage(preferences.language);
     try {
       localStorage.setItem(preferencesKey, JSON.stringify(preferences));

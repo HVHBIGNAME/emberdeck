@@ -21,6 +21,8 @@ import { useTranslation } from "./i18n";
 import { usePreferences } from "./Preferences";
 import { Button, ErrorBox, Logo, Select } from "./ui";
 import type { Accent, Background, Theme } from "./preferences-model";
+import { sceneArt } from "./scene-art";
+import { Slider } from "./Slider";
 import "./settings.css";
 
 function Choice({
@@ -45,6 +47,7 @@ function Choice({
   const descriptionId = useId();
   return (
     <label
+      data-cursor-scope="choice"
       className={`preference-choice ${selected ? "selected" : ""} ${className}`}
     >
       <input
@@ -230,6 +233,14 @@ function MotionSettings() {
         onChange={() => update({ animations: !preferences.animations })}
       />
       <Toggle
+        label={t("Smooth startup")}
+        description={t(
+          "Show the opening animation for at least 0.9 seconds, even when the panel is ready sooner. Turn off to open immediately.",
+        )}
+        checked={preferences.loadingIntro}
+        onChange={() => update({ loadingIntro: !preferences.loadingIntro })}
+      />
+      <Toggle
         label={t("Focus cursor")}
         description={t(
           "A soft pointer that frames interactive elements. Mouse and trackpad only.",
@@ -265,8 +276,8 @@ function BackgroundSettings() {
     },
     {
       id: "aurora",
-      name: "Aurora",
-      description: "Soft light, slowly drifting.",
+      name: "Golden hour",
+      description: "The last light over a forest lake.",
     },
     {
       id: "overworld",
@@ -318,11 +329,14 @@ function BackgroundSettings() {
               selected={preferences.background === option.id}
               onSelect={() => update({ background: option.id })}
             >
-              <span className={`background-sample sample-${option.id}`}>
-                <i />
-                <b />
-                <em />
-              </span>
+              <span
+                className={`background-sample sample-${option.id}`}
+                style={
+                  option.id === "none" || option.id === "custom"
+                    ? undefined
+                    : { backgroundImage: `url(${sceneArt(option.id, true)})` }
+                }
+              />
             </Choice>
           ))}
           {customImage && (
@@ -341,23 +355,17 @@ function BackgroundSettings() {
           )}
         </div>
       </fieldset>
-      <label className="intensity-control">
-        <span>
-          {t("Background intensity")}
-          <output>{preferences.intensity}%</output>
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={80}
-          step={5}
-          value={preferences.intensity}
-          onChange={(event) =>
-            update({ intensity: Number(event.target.value) })
-          }
-          aria-label={t("Background intensity")}
-        />
-      </label>
+      <Slider
+        label={t("Background intensity")}
+        value={preferences.intensity}
+        valueLabel={`${preferences.intensity}%`}
+        onValueChange={(intensity) => update({ intensity })}
+        min={0}
+        max={80}
+        step={5}
+        minLabel="0%"
+        maxLabel="80%"
+      />
       <div className="custom-background-actions">
         <input
           ref={input}
@@ -391,6 +399,15 @@ function BackgroundSettings() {
           "PNG, JPEG or WebP up to 8 MiB. Resized and stored only in this browser.",
         )}
       </p>
+      <a
+        className="artwork-credit"
+        href="https://modrinth.com/shader/photon-shader/gallery"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t("Minecraft screenshots · Photon Shaders")}
+        <ArrowUpRight size={12} />
+      </a>
       <ErrorBox error={error} />
     </section>
   );

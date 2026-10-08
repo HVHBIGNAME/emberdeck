@@ -1,4 +1,8 @@
 export default {
+  "Golden hour": "Золотой час",
+  "The last light over a forest lake.": "Закатный свет над лесным озером.",
+  "Minecraft screenshots · Photon Shaders":
+    "Скриншоты Minecraft · Photon Shaders",
   "Review preferences": "Проверьте настройки",
   "Your browser could not store this image. Try a smaller image or allow local storage.":
     "Браузер не смог сохранить изображение. Выберите файл поменьше или разрешите локальное хранилище.",
@@ -30,6 +34,9 @@ export default {
   "Changes apply immediately. Your server names, files and console text stay original.":
     "Изменения применяются сразу. Названия серверов, файлы и текст консоли остаются в оригинале.",
   "Motion & interaction": "Движение и взаимодействие",
+  "Smooth startup": "Плавный запуск",
+  "Show the opening animation for at least 0.9 seconds, even when the panel is ready sooner. Turn off to open immediately.":
+    "Показывать анимацию запуска не менее 0,9 секунды, даже если панель уже готова. Отключите для мгновенного открытия.",
   Animations: "Анимации",
   "Page transitions, gentle reveals and responsive micro-interactions.":
     "Переходы страниц, плавное появление и приятный отклик элементов.",

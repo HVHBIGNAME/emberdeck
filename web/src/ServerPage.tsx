@@ -36,14 +36,13 @@ import {
   bytes,
   pretty,
   saveFile,
-  world,
 } from "./ui";
 import { Chart } from "./Chart";
 import { BackupsPage, AutomationsPage } from "./operations";
 import { FilesPage } from "./FilesPage";
 import { LibraryPage } from "./Library";
 import { DiagnosticsPage } from "./DiagnosticsPage";
-import { publicFile } from "./assets";
+import { sceneArt, serverArt } from "./scene-art";
 import { useTranslation, locale } from "./i18n";
 
 const tabs = [
@@ -75,7 +74,7 @@ export default function ServerPage({ id }: { id: string }) {
       <div className="server-page-header">
         <img
           className="server-hero"
-          src={publicFile(`worlds/${world(server)}.svg`)}
+          src={sceneArt(serverArt(server), true)}
           alt=""
         />
         <div>

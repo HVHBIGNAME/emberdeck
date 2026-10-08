@@ -9,6 +9,7 @@ export interface Preferences {
   theme: Theme;
   language: Language;
   animations: boolean;
+  loadingIntro: boolean;
   cursor: boolean;
   background: Background;
   intensity: number;
@@ -27,6 +28,7 @@ export function defaultPreferences(): Preferences {
         ? "ru"
         : "en",
     animations: true,
+    loadingIntro: true,
     cursor: true,
     background: "aurora",
     intensity: 40,
@@ -61,6 +63,11 @@ export function parsePreferences(value: unknown): Preferences {
     theme: choice(saved.theme, ["system", "light", "dark"], defaults.theme),
     language: choice(saved.language, ["en", "ru"], defaults.language),
     animations: choice(saved.animations, [true, false], defaults.animations),
+    loadingIntro: choice(
+      saved.loadingIntro,
+      [true, false],
+      defaults.loadingIntro,
+    ),
     cursor: choice(saved.cursor, [true, false], defaults.cursor),
     background: choice(
       saved.background,

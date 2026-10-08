@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Download, Flame, SlidersHorizontal } from "lucide-react";
 import { post } from "./api";
-import { publicFile } from "./assets";
+import { sceneArt } from "./scene-art";
 import { Button, ErrorBox, Logo } from "./ui";
 import { useTranslation } from "./i18n";
 import { PageTransition } from "./Motion";
@@ -22,11 +22,12 @@ export function Login({ onLogin }: { onLogin: () => void }) {
         {t("Settings")}
       </a>
       <div className="login-art" aria-hidden="true">
-        <div className="login-orbit">
-          <img src={publicFile("worlds/overworld.svg")} alt="" />
-          <span className="login-orbit-tag">
-            <span className="dot green" /> {t("YOUR NEXT WORLD AWAITS")}
-          </span>
+        <img className="login-scene" src={sceneArt("aurora")} alt="" />
+        <div className="login-scene-shade" />
+        <div className="login-scene-caption">
+          <span>{t("YOUR NEXT WORLD AWAITS")}</span>
+          <strong>{t("Your worlds. Your rules.")}</strong>
+          <p>{t("A place for everything you build.")}</p>
         </div>
       </div>
       <div className="login-content">

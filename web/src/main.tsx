@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@fontsource-variable/inter";
-import App from "./app";
+import "@fontsource-variable/manrope";
+import "@fontsource-variable/golos-text";
+import { Startup } from "./Startup";
 import { PreferencesProvider } from "./Preferences";
 import { Atmosphere } from "./Atmosphere";
 import { FocusCursor } from "./FocusCursor";
@@ -16,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <PreferencesProvider>
       <Atmosphere />
       <FocusCursor />
-      <App />
+      <Startup />
     </PreferencesProvider>
   </React.StrictMode>,
 );

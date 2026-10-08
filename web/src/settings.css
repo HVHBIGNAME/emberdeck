@@ -86,14 +86,13 @@
 }
 .preference-choice:hover {
   border-color: var(--border-strong);
-  transform: translateY(-2px);
 }
 .preference-choice.selected {
-  border-color: var(--orange);
+  border-color: var(--accent-line);
   background: var(--accent-soft);
-  box-shadow: 0 0 0 1px var(--accent-line);
+  box-shadow: none;
 }
-.preference-choice:focus-within {
+.preference-choice:has(> input:focus-visible) {
   outline: 2px solid var(--orange);
   outline-offset: 3px;
 }
@@ -280,99 +279,20 @@
   background-size: cover;
 }
 .sample-none {
-  background-image: radial-gradient(
-    var(--border-strong) 0.7px,
-    transparent 0.7px
-  );
-  background-size: 8px 8px;
+  background: var(--field);
+  border: 1px dashed var(--border-strong);
 }
-.sample-aurora {
-  background:
-    radial-gradient(ellipse at 20% 10%, #92ac9899, transparent 70%),
-    radial-gradient(ellipse at 90% 95%, #af8b7377, transparent 70%), #1e2c34;
+.artwork-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--dim);
+  font-size: 0.68rem;
+  margin-top: 0.8rem;
+  border-radius: 0.25rem;
 }
-.sample-overworld {
-  background: linear-gradient(#abc6bd, #d7d7b2);
-}
-.sample-overworld i,
-.sample-overworld b,
-.sample-nether i,
-.sample-nether b {
-  position: absolute;
-  inset: 45% -20% 0;
-  background: #608575;
-  clip-path: polygon(
-    0 70%,
-    15% 70%,
-    15% 40%,
-    25% 40%,
-    25% 20%,
-    45% 20%,
-    45% 0,
-    60% 0,
-    60% 45%,
-    85% 45%,
-    85% 25%,
-    100% 25%,
-    100% 100%,
-    0 100%
-  );
-}
-.sample-overworld b {
-  inset: 65% -20% 0;
-  background: #3b6352;
-}
-.sample-overworld em {
-  position: absolute;
-  width: 30%;
-  height: 10%;
-  left: 20%;
-  top: 20%;
-  background: #eef3d9;
-  box-shadow: 30px 9px 0 -1px #eef3d9;
-}
-.sample-nether {
-  background:
-    radial-gradient(ellipse at 70% 100%, #e3874255, transparent), #342531;
-}
-.sample-nether i {
-  background: #805246;
-}
-.sample-nether b {
-  inset: 70% -20% 0;
-  background: #ad754e;
-}
-.sample-end {
-  background:
-    radial-gradient(ellipse at 90% 20%, #8c65a288, transparent), #252539;
-}
-.sample-end i,
-.sample-end b {
-  position: absolute;
-  width: 32%;
-  height: 24%;
-  background: #c7bc9477;
-  left: 10%;
-  top: 35%;
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 35%,
-    75% 35%,
-    75% 70%,
-    55% 70%,
-    55% 100%,
-    40% 100%,
-    40% 70%,
-    20% 70%,
-    20% 35%,
-    0 35%
-  );
-}
-.sample-end b {
-  left: 55%;
-  top: 15%;
-  transform: scale(0.7);
+.artwork-credit:hover {
+  color: var(--text);
 }
 .intensity-control {
   gap: 0.8rem;

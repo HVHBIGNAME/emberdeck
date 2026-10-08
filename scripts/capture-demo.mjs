@@ -20,7 +20,15 @@ let captured = 0;
 async function visit(page, route) {
   await page.goto(`${baseURL}/demo#${route}`, { waitUntil: "networkidle" });
   await page.locator("h1").waitFor();
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      [...document.images].map((image) => {
+        image.loading = "eager";
+        return image.decode();
+      }),
+    );
+  });
 }
 async function snapshot(page, name, fullPage = true) {
   await page.screenshot({
@@ -33,6 +41,21 @@ async function snapshot(page, name, fullPage = true) {
 
 try {
   browser = await chromium.launch();
+  const intro = await browser.newPage({
+    viewport: { width: 1536, height: 1080 },
+    colorScheme: "dark",
+    locale: "ru-RU",
+    reducedMotion: "no-preference",
+  });
+  const introTime = new Date("2026-10-08T18:24:00Z");
+  await intro.clock.install({ time: introTime });
+  await intro.clock.pauseAt(introTime);
+  await intro.goto(`${baseURL}/demo`, { waitUntil: "domcontentloaded" });
+  await intro.locator(".startup-screen").waitFor();
+  await intro.evaluate(() => document.fonts.ready);
+  await intro.clock.runFor(450);
+  await snapshot(intro, "startup", false);
+  await intro.close();
   const context = await browser.newContext({
     viewport: { width: 2560, height: 1440 },
     deviceScaleFactor: 1,
@@ -41,12 +64,13 @@ try {
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
-  await page.clock.setFixedTime(new Date("2026-10-05T18:24:00Z"));
+  await page.clock.setFixedTime(new Date("2026-10-06T18:24:00Z"));
   for (const [name, route] of [
     ["overview", "/overview"],
     ["settings", "/settings"],
     ["console", "/servers/oakheart/console"],
     ["library", "/library"],
+    ["blueprints", "/blueprints"],
     ["automations", "/automations"],
     ["diagnostics", "/servers/oakheart/diagnostics"],
     ["installation", "/install"],
@@ -68,6 +92,8 @@ try {
   await page.getByRole("radio", { name: "Светлая", exact: true }).check();
   await page.getByRole("combobox", { name: "Язык", exact: true }).click();
   await page.getByRole("option", { name: "English" }).click();
+  await visit(page, "/settings");
+  await snapshot(page, "settings-light");
   await visit(page, "/overview");
   await snapshot(page, "overview-light");
   await context.close();
@@ -81,10 +107,11 @@ try {
     locale: "ru-RU",
     reducedMotion: "reduce",
   });
-  await mobile.clock.setFixedTime(new Date("2026-10-05T18:24:00Z"));
+  await mobile.clock.setFixedTime(new Date("2026-10-06T18:24:00Z"));
   for (const [name, route] of [
     ["mobile", "/overview"],
     ["settings-mobile", "/settings"],
+    ["blueprints-mobile", "/blueprints"],
     ["installation-mobile", "/install"],
   ]) {
     await visit(mobile, route);
@@ -100,11 +127,15 @@ try {
     recordVideo: { dir: destination, size: { width: 1920, height: 1080 } },
   });
   const tour = await recording.newPage();
-  await tour.clock.setFixedTime(new Date("2026-10-05T18:24:00Z"));
+  await tour.clock.setFixedTime(new Date("2026-10-06T18:24:00Z"));
   await visit(tour, "/overview");
   await tour.waitForTimeout(1800);
-  await tour.locator(".server-identity").first().hover();
+  await tour
+    .getByRole("link", { name: "Open Oakheart SMP", exact: true })
+    .hover();
   await tour.waitForTimeout(1000);
+  await tour.locator(".server-card .card-hitarea").nth(1).hover();
+  await tour.waitForTimeout(800);
   await tour
     .getByRole("button", { name: "New server", exact: true })
     .first()
@@ -125,6 +156,29 @@ try {
   await tour.waitForTimeout(1600);
   await tour.getByRole("radio", { name: "Overworld", exact: true }).check();
   await tour.waitForTimeout(1600);
+  const intensity = tour.getByRole("slider", { name: "Background intensity" });
+  await intensity.scrollIntoViewIfNeeded();
+  const thumb = await intensity.boundingBox();
+  const track = await tour
+    .locator(".background-settings .range-track")
+    .boundingBox();
+  if (!thumb || !track) throw new Error("Background slider is not visible");
+  await tour.mouse.move(thumb.x + thumb.width / 2, thumb.y + thumb.height / 2, {
+    steps: 20,
+  });
+  await tour.waitForTimeout(600);
+  await tour.mouse.down();
+  for (const position of [0.85, 0.2, 0.65]) {
+    await tour.mouse.move(
+      track.x + track.width * position,
+      track.y + track.height / 2,
+      { steps: 24 },
+    );
+    await tour.waitForTimeout(600);
+  }
+  await tour.mouse.up();
+  await tour.waitForTimeout(800);
+  await snapshot(tour, "intensity-slider", false);
   await tour.getByRole("radio", { name: "Light", exact: true }).check();
   await tour.waitForTimeout(1600);
   await tour.getByRole("combobox", { name: "Language", exact: true }).click();

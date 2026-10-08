@@ -3,6 +3,14 @@ export default {
     "Быстрое и привычное ядро для вашего сообщества.",
   "Paper performance with more ways to make it yours.":
     "Производительность Paper с расширенными настройками.",
+  "Paper performance, with more ways to make it yours.":
+    "Производительность Paper с расширенными настройками.",
+  "Region-threaded worlds for ambitious communities.":
+    "Многопоточная обработка регионов для больших сообществ.",
+  "A modern foundation for your next adventure.":
+    "Современная основа для вашего следующего приключения.",
+  "Forge mods and Bukkit plugins in one world.":
+    "Моды Forge и плагины Bukkit в одном мире.",
   "Region-threaded worlds. Requires Folia-compatible plugins.":
     "Многопоточная обработка регионов. Нужны совместимые с Folia плагины.",
   "Minecraft, just as it comes.": "Minecraft в оригинальном виде.",

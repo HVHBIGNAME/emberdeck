@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Box,
-  Check,
-  Cpu,
-  Info,
-  Rocket,
-  Server,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Box, Check, Info, Rocket } from "lucide-react";
 import { post, useApi } from "./api";
 import type { GameServer, Node, Template } from "./types";
 import { useWorkspace } from "./context";
@@ -16,6 +7,7 @@ import { Button, ErrorBox, Modal, Select, pretty } from "./ui";
 import { useTranslation } from "./i18n";
 import { AnimatePresence, motion } from "motion/react";
 import { usePreferences } from "./Preferences";
+import { Slider } from "./Slider";
 
 export function NewServer({
   initialTemplate,
@@ -248,42 +240,28 @@ export function NewServer({
                 </label>
               </div>
               <div className="form-grid">
-                <div className="resource-slider">
-                  <div>
-                    <span>
-                      <Server size={12} /> {tr("Memory limit")}
-                    </span>
-                    <strong>
-                      {memory / 1024} {tr("GiB")}
-                    </strong>
-                  </div>
-                  <input
-                    aria-label={tr("Memory limit")}
-                    type="range"
-                    min="1024"
-                    max="16384"
-                    step="512"
-                    value={memory}
-                    onChange={(e) => setMemory(Number(e.target.value))}
-                  />
-                </div>
-                <div className="resource-slider">
-                  <div>
-                    <span>
-                      <Cpu size={12} /> {tr("CPU limit")}
-                    </span>
-                    <strong>{tr("{{count}} cores", { count: cpu })}</strong>
-                  </div>
-                  <input
-                    aria-label={tr("CPU limit")}
-                    type="range"
-                    min="0.5"
-                    max="8"
-                    step="0.5"
-                    value={cpu}
-                    onChange={(e) => setCpu(Number(e.target.value))}
-                  />
-                </div>
+                <Slider
+                  label={tr("Memory limit")}
+                  value={memory}
+                  onValueChange={setMemory}
+                  min={1024}
+                  max={16384}
+                  step={512}
+                  valueLabel={`${memory / 1024} ${tr("GiB")}`}
+                  minLabel={`1 ${tr("GiB")}`}
+                  maxLabel={`16 ${tr("GiB")}`}
+                />
+                <Slider
+                  label={tr("CPU limit")}
+                  value={cpu}
+                  onValueChange={setCpu}
+                  min={0.5}
+                  max={8}
+                  step={0.5}
+                  valueLabel={tr("{{count}} cores", { count: cpu })}
+                  minLabel="0.5"
+                  maxLabel="8"
+                />
               </div>
               <div className="form-grid">
                 <label>

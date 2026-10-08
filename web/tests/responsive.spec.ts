@@ -60,10 +60,32 @@ for (const theme of ["light", "dark"] as const) {
             }),
           ).toBeVisible();
         await expect(page.locator(".loading")).toHaveCount(0);
+        await page.evaluate(() => document.fonts.ready);
         expect(
           await page.evaluate(() => document.documentElement.scrollWidth),
           route,
         ).toBeLessThanOrEqual(width);
+        if (width <= 390 && route === "/servers/oakheart/console") {
+          const terminal = await page.locator(".terminal").boundingBox();
+          const download = await page
+            .getByRole("button", { name: "Скачать лог консоли", exact: true })
+            .boundingBox();
+          expect(download).not.toBeNull();
+          expect(download!.x + download!.width).toBeLessThanOrEqual(
+            terminal!.x + terminal!.width,
+          );
+        }
+        if (width <= 390 && route === "/blueprints") {
+          for (const card of await page
+            .locator(".blueprint-library-card")
+            .all()) {
+            const box = await card.boundingBox();
+            const tag = await card.locator(".tag").boundingBox();
+            expect(tag!.x + tag!.width).toBeLessThanOrEqual(
+              box!.x + box!.width,
+            );
+          }
+        }
         if (width === 2560 && route === "/overview") {
           const layout = await page.evaluate(() => ({
             width: document
@@ -147,6 +169,16 @@ test("touch devices retain native input and mobile navigation works", async ({
     await page.goto(`${test.info().project.use.baseURL}/demo`);
     await expect(page.locator(".server-card")).toHaveCount(4);
     await expect(page.locator(".focus-cursor")).toHaveCount(0);
+    await expect(
+      page
+        .locator(".topbar")
+        .getByRole("button", { name: "Find a server…", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(".topbar")
+        .getByRole("button", { name: "New server", exact: true }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Open navigation" }).tap();
     await page.keyboard.press("Escape");
     await expect(page.locator(".sidebar")).not.toHaveClass(/mobile-open/);

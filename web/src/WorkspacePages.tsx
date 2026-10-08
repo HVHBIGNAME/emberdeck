@@ -30,6 +30,8 @@ import {
 import { useTranslation } from "./i18n";
 import { motion } from "motion/react";
 import { usePreferences } from "./Preferences";
+import { sceneArt, serverArt } from "./scene-art";
+import { SegmentedControl } from "./SegmentedControl";
 
 export function BlueprintsPage() {
   const { t: tr } = useTranslation();
@@ -55,23 +57,18 @@ export function BlueprintsPage() {
         <span className="tag">{tr("9 CORE BLUEPRINTS")}</span>
       </div>
       <div className="toolbar">
-        <div className="segment">
-          {[
+        <SegmentedControl
+          label={tr("Blueprint type")}
+          value={family}
+          onChange={setFamily}
+          options={[
             ["all", "All blueprints"],
             ["plugins", "Plugins"],
             ["mods", "Mods"],
             ["hybrid", "Mods + plugins"],
             ["vanilla", "Vanilla"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              className={family === value ? "active" : ""}
-              onClick={() => setFamily(value)}
-            >
-              {tr(label)}
-            </button>
-          ))}
-        </div>
+          ].map(([value, label]) => ({ value, label: tr(label) }))}
+        />
       </div>
       <ErrorBox error={templates.error} />
       {templates.loading ? (
@@ -84,36 +81,52 @@ export function BlueprintsPage() {
               .map((t) => (
                 <motion.article
                   key={t.id}
-                  className={`blueprint-card ${t.family}`}
+                  className={`blueprint-card blueprint-library-card ${t.family}`}
                   layout={animated ? "position" : false}
                   initial={animated ? { opacity: 0, y: 16 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: animated ? 0.22 : 0 }}
                 >
-                  <span className="blueprint-icon">{t.name[0]}</span>
-                  <h3>{t.name}</h3>
-                  <p>{tr(t.description)}</p>
-                  <span className="tag">
-                    {tr(
-                      t.experimental
-                        ? "Experimental"
-                        : t.family === "plugins"
-                          ? "Plugin support"
-                          : t.family === "mods"
-                            ? "Mod support"
-                            : "Official server",
-                    )}
-                  </span>
-                  <hr />
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
+                    className="card-hitarea"
+                    data-cursor-target="parent"
                     disabled={!can("admin")}
+                    aria-label={tr("Create with {{name}}", { name: t.name })}
                     onClick={() => newServer(t.id)}
-                  >
-                    {tr("Create with {{name}}", { name: t.name })}
-                    <ArrowUpRight size={14} />
-                  </Button>
+                  />
+                  <div className="blueprint-cover" aria-hidden="true">
+                    <img
+                      src={sceneArt(
+                        serverArt({ id: t.id, template: t.id }),
+                        true,
+                      )}
+                      alt=""
+                      loading="lazy"
+                    />
+                    <div />
+                  </div>
+                  <div className="blueprint-content">
+                    <span className="blueprint-icon">{t.name[0]}</span>
+                    <h3>{t.name}</h3>
+                    <p>{tr(t.description)}</p>
+                    <span className="tag">
+                      {tr(
+                        t.experimental
+                          ? "Experimental"
+                          : t.family === "plugins"
+                            ? "Plugin support"
+                            : t.family === "mods"
+                              ? "Mod support"
+                              : "Official server",
+                      )}
+                    </span>
+                    <div className="blueprint-launch">
+                      {tr("Create with {{name}}", { name: t.name })}
+                      <ArrowUpRight size={14} />
+                    </div>
+                  </div>
                 </motion.article>
               ))}
           </AnimatePresence>

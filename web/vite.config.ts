@@ -11,6 +11,8 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: false,
+    assetsInlineLimit: (file) =>
+      /\.(woff2?|ttf|otf)$/i.test(file) ? false : undefined,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -21,7 +23,11 @@ export default defineConfig({
             "react/jsx-runtime",
           ],
           motion: ["motion/react"],
-          controls: ["@radix-ui/react-dialog", "@radix-ui/react-select"],
+          controls: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-select",
+            "@radix-ui/react-slider",
+          ],
           i18n: ["i18next", "react-i18next"],
         },
       },

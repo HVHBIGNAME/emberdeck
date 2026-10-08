@@ -26,7 +26,7 @@ One Rust binary. An embedded web panel. A Linux agent. A real CLI.
 
 - **A world in a few clicks.** Paper, Purpur, Folia, Vanilla, Fabric, Forge, NeoForge, Quilt, and experimental Arclight blueprints. Published versions, automatic Java selection, and Modrinth modpacks.
 - **A proper control room.** Start, stop, restart, console commands, MOTD, player counts, CPU / memory / disk observations, and metric history.
-- **A workspace that feels like you.** Light, dark and system themes; English and Russian; adjustable text size; animated Minecraft backgrounds; keyboard-friendly selectors and an optional outline cursor. Motion can be switched off and respects your system's reduced-motion preference.
+- **A workspace that feels like you.** Light, dark and system themes; English and Russian; adjustable text size; real Minecraft scenery; full-card navigation; animated sliders and an optional outline cursor. Fonts and artwork are served locally. Motion can be switched off and respects your system's reduced-motion preference.
 - **Files, your way.** A web editor with conflict detection, uploads and downloads, plus native, server-scoped SFTP. Toggle add-ons by renaming `.jar` ↔ `.jar.disabled`.
 - **A library that knows your server.** Modrinth results filtered by game version and loader, required dependency resolution, publisher checksum verification, and GitHub release assets.
 - **Automations with context.** Cron and interval schedules, player join / leave events, an empty-world trigger, exact-player filters, and “only when empty” conditions.
@@ -81,9 +81,11 @@ Just exploring? Run **`emberdeck demo`** — a read-only sample workspace, witho
 
 Open **Settings** from the sidebar or the sliders button in the top bar. Appearance preferences apply immediately and are stored for this browser and panel address. The overview is the default entry point; installation help is under **Settings → Help & deployment**.
 
+**Smooth startup** gives the opening animation a minimum of 0.9 seconds while data loads in parallel. Turn it off in **Motion & interaction** for immediate opening; reduced motion and disabled animations also skip the extra wait.
+
 ![Personal preferences: themes, accents, motion, language and Minecraft backgrounds](docs/media/settings.png)
 
-[Personalization guide →](docs/ui-preferences.md) · [Light theme](docs/media/overview-light.png) · [Русский интерфейс](docs/media/overview-ru.png)
+[Personalization guide →](docs/ui-preferences.md) · [Light theme](docs/media/overview-light.png) · [Русский интерфейс](docs/media/overview-ru.png) · [Blueprints](docs/media/blueprints.png)
 
 ## One binary, clear responsibilities
 

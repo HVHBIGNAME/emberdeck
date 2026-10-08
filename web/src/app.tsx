@@ -41,7 +41,11 @@ import {
 } from "./Navigation";
 import { JobDock } from "./JobDock";
 
-export default function App() {
+export default function App({
+  onReady,
+}: {
+  onReady: (failed?: boolean) => void;
+}) {
   const { t } = useTranslation();
   const { motion: animated } = usePreferences();
   const identity = useApi<Identity>("/api/auth/me");
@@ -77,6 +81,29 @@ export default function App() {
     [],
   );
   const refresh = useCallback(() => setRevision((v) => v + 1), []);
+  useEffect(() => {
+    if (route === "/install" || (route === "/settings" && !identity.data)) {
+      onReady();
+    } else if (!identity.loading) {
+      if (!identity.data) {
+        const login =
+          identity.error instanceof ApiError && identity.error.status === 401;
+        onReady(!login);
+      } else if (overview.error) {
+        onReady(true);
+      } else if (overview.data) {
+        onReady();
+      }
+    }
+  }, [
+    identity.loading,
+    identity.data,
+    identity.error,
+    overview.data,
+    overview.error,
+    route,
+    onReady,
+  ]);
   useEffect(() => {
     const listener = () =>
       setRoute(window.location.hash.slice(1) || "/overview");
@@ -352,6 +379,7 @@ export default function App() {
               </span>
               <button
                 className="global-search"
+                aria-label={t("Find a server…")}
                 onClick={() => {
                   setSearch("");
                   setShowSearch(true);
@@ -371,7 +399,11 @@ export default function App() {
                 <SlidersHorizontal size={18} />
               </button>
               {workspace.can("admin") && (
-                <Button variant="primary" onClick={() => workspace.newServer()}>
+                <Button
+                  variant="primary"
+                  aria-label={t("New server")}
+                  onClick={() => workspace.newServer()}
+                >
                   <Plus size={16} />
                   <span>{t("New server")}</span>
                 </Button>

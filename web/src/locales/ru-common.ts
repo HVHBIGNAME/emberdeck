@@ -1,4 +1,11 @@
 export default {
+  "Your worlds. Your rules.": "Ваши миры. Ваши правила.",
+  "A place for everything you build.": "Место для всего, что вы создаёте.",
+  "Activity period": "Период активности",
+  "Server status": "Состояние серверов",
+  "Blueprint type": "Тип шаблона",
+  "Package source": "Источник пакетов",
+  "Package type": "Тип пакетов",
   "Choose an option": "Выберите вариант",
   "Failed to fetch":
     "Не удалось подключиться к панели. Проверьте соединение и повторите.",
