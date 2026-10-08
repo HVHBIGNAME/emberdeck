@@ -170,7 +170,7 @@ hr {
   gap: 10px;
   line-height: 1;
 }
-.logo img {
+.logo .brand-mark {
   width: 31px;
   height: 31px;
 }
@@ -182,7 +182,7 @@ hr {
 .logo-dot {
   color: var(--orange);
 }
-.logo.small img {
+.logo.small .brand-mark {
   width: 27px;
   height: 27px;
 }
@@ -2534,10 +2534,6 @@ label > small {
   color: #92a8c4;
   margin: 10px 0;
 }
-.mobile-toggle,
-.sidebar-scrim {
-  display: none;
-}
 .login-screen {
   min-height: 100vh;
   display: grid;
@@ -2701,7 +2697,7 @@ label > small {
   .logo > span {
     font-size: 21px;
   }
-  .logo img {
+  .logo .brand-mark {
     width: 28px;
     height: 28px;
   }
@@ -2777,26 +2773,10 @@ label > small {
 }
 @media (max-width: 1000px) {
   .sidebar {
-    transform: translateX(-100%);
-    width: 220px;
-    transition: transform 0.2s;
-  }
-  .sidebar.mobile-open {
-    transform: translateX(0);
+    display: none;
   }
   .main-shell {
     margin-left: 0;
-  }
-  .mobile-toggle {
-    display: inline-flex;
-  }
-  .sidebar-scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: #0009;
-    z-index: 25;
-    border: 0;
   }
   .overview-middle {
     grid-template-columns: minmax(0, 1fr) 300px;

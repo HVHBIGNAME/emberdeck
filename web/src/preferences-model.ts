@@ -13,6 +13,7 @@ export interface Preferences {
   cursor: boolean;
   background: Background;
   intensity: number;
+  panelTransparency: number;
   accent: Accent;
   density: Density;
 }
@@ -32,6 +33,7 @@ export function defaultPreferences(): Preferences {
     cursor: true,
     background: "aurora",
     intensity: 40,
+    panelTransparency: 0,
     accent: "ember",
     density: "comfortable",
   };
@@ -48,17 +50,19 @@ function choice<T extends string | boolean>(
   return selected;
 }
 
+function percentage(value: unknown, maximum: number, defaultValue: number) {
+  if (value === undefined) return defaultValue;
+  if (typeof value !== "number" || !Number.isFinite(value))
+    throw new Error("Invalid saved percentage");
+  return Math.max(0, Math.min(maximum, value));
+}
+
 export function parsePreferences(value: unknown): Preferences {
   const defaults = defaultPreferences();
   if (value === null) return defaults;
   if (typeof value !== "object" || Array.isArray(value))
     throw new Error("Invalid saved preferences");
   const saved = value as Record<string, unknown>;
-  if (
-    saved.intensity !== undefined &&
-    (typeof saved.intensity !== "number" || !Number.isFinite(saved.intensity))
-  )
-    throw new Error("Invalid background intensity");
   return {
     theme: choice(saved.theme, ["system", "light", "dark"], defaults.theme),
     language: choice(saved.language, ["en", "ru"], defaults.language),
@@ -74,10 +78,12 @@ export function parsePreferences(value: unknown): Preferences {
       ["none", "aurora", "overworld", "nether", "end", "custom"],
       defaults.background,
     ),
-    intensity:
-      typeof saved.intensity === "number" && Number.isFinite(saved.intensity)
-        ? Math.max(0, Math.min(80, saved.intensity))
-        : defaults.intensity,
+    intensity: percentage(saved.intensity, 80, defaults.intensity),
+    panelTransparency: percentage(
+      saved.panelTransparency,
+      85,
+      defaults.panelTransparency,
+    ),
     accent: choice(
       saved.accent,
       ["ember", "moss", "diamond", "amethyst"],

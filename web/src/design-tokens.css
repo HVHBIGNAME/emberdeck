@@ -2,6 +2,7 @@
   --font-body: "Golos Text Variable", "Segoe UI", sans-serif;
   --font-heading: "Manrope Variable", "Golos Text Variable", sans-serif;
   --ui-scale: 1;
+  --surface-opacity: 1;
   --sidebar-width: 15rem;
   --radius: 1.1rem;
   --duration: 0.22s;
@@ -19,8 +20,8 @@
 :root,
 :root[data-theme="dark"] {
   --bg: #101417;
-  --sidebar: #101316fa;
-  --panel: #181d21f5;
+  --sidebar: rgb(16 19 22 / calc(0.98 * var(--surface-opacity)));
+  --panel: rgb(24 29 33 / calc(0.96 * var(--surface-opacity)));
   --panel-raised: #242a2f;
   --surface-quiet: #ffffff05;
   --field: #111619;
@@ -49,15 +50,15 @@
   --shadow: 0 4px 24px #00000012;
   --shadow-raised: 0 20px 60px #00000050;
   --scrim: #06090cc7;
-  --glass: #111619e8;
+  --glass: rgb(17 22 25 / calc(0.91 * var(--surface-opacity)));
   --console: #0b1014;
   --console-text: #c1cdd1;
   --photo-opacity: 0.7;
 }
 :root[data-theme="light"] {
   --bg: #f1f2ef;
-  --sidebar: #f9faf7fa;
-  --panel: #fffffff7;
+  --sidebar: rgb(249 250 247 / calc(0.98 * var(--surface-opacity)));
+  --panel: rgb(255 255 255 / calc(0.97 * var(--surface-opacity)));
   --panel-raised: #ffffff;
   --surface-quiet: #222d3104;
   --field: #f5f6f3;
@@ -86,7 +87,7 @@
   --shadow: 0 4px 24px #273d4305;
   --shadow-raised: 0 18px 50px #273d431a;
   --scrim: #24303380;
-  --glass: #f9faf7eb;
+  --glass: rgb(249 250 247 / calc(0.92 * var(--surface-opacity)));
   --photo-opacity: 0.28;
 }
 :root[data-accent="moss"] {

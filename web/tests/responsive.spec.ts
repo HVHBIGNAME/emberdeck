@@ -179,13 +179,18 @@ test("touch devices retain native input and mobile navigation works", async ({
         .locator(".topbar")
         .getByRole("button", { name: "New server", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Open navigation" }).tap();
-    await page.keyboard.press("Escape");
-    await expect(page.locator(".sidebar")).not.toHaveClass(/mobile-open/);
+    await page
+      .getByRole("button", { name: "More sections", exact: true })
+      .tap();
     await expect(
-      page.getByRole("button", { name: "Open navigation" }),
+      page.getByRole("dialog", { name: "Workspace sections" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".sidebar")).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "More sections", exact: true }),
     ).toBeFocused();
-    await page.getByRole("button", { name: "Open navigation" }).tap();
     await page.getByRole("link", { name: "Settings", exact: true }).tap();
     await expect(
       page.getByRole("heading", { name: "A workspace that feels like you." }),

@@ -12,6 +12,11 @@ export default {
     "Светлое или тёмное. Спокойное или живое. Настройте Emberdeck под себя.",
   "Saved on this device": "Сохраняется на этом устройстве",
   Appearance: "Внешний вид",
+  "Panel transparency": "Прозрачность панелей",
+  Opaque: "Непрозрачные",
+  Transparent: "Прозрачные",
+  "Let the background show through cards, the sidebar and the top bar. Text and controls stay solid.":
+    "Фон будет виден сквозь карточки, боковую панель и верхнюю строку. Текст и элементы управления остаются непрозрачными.",
   Theme: "Тема",
   Light: "Светлая",
   Dark: "Тёмная",

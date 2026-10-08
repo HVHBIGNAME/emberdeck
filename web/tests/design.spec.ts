@@ -196,7 +196,7 @@ test("motion off makes sliders and segmented controls immediate", async ({
   const slider = page.getByRole("slider", { name: "Background intensity" });
   await slider.focus();
   await slider.press("End");
-  await expect(page.locator(".range-fill")).toHaveCSS(
+  await expect(page.locator(".background-settings .range-fill")).toHaveCSS(
     "transition-duration",
     "0s",
   );

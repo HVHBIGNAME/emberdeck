@@ -286,7 +286,7 @@ export function FilesPage({ server }: { server: GameServer }) {
             <Loading />
           ) : (
             <div className="panel table-wrap">
-              <table className="data-table">
+              <table className="data-table mobile-cards file-list">
                 <thead>
                   <tr>
                     <th>{t("Name")}</th>
@@ -311,8 +311,10 @@ export function FilesPage({ server }: { server: GameServer }) {
                           {file.name}
                         </button>
                       </td>
-                      <td>{file.is_dir ? "—" : bytes(file.size)}</td>
-                      <td>{date(file.modified)}</td>
+                      <td data-label={t("Size")}>
+                        {file.is_dir ? "—" : bytes(file.size)}
+                      </td>
+                      <td data-label={t("Modified")}>{date(file.modified)}</td>
                       <td>
                         <div className="row-actions">
                           {writable && (

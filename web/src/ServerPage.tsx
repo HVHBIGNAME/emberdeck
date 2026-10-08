@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Activity,
   Archive,
   ArrowUpRight,
   Cpu,
   Download,
-  Files,
   HardDrive,
   Info,
   Play,
@@ -13,12 +11,9 @@ import {
   RotateCw,
   Send,
   Settings,
-  ShieldCheck,
   Square,
-  Terminal,
   Trash2,
   Users,
-  Workflow,
 } from "lucide-react";
 import { api, post, useApi } from "./api";
 import { useWorkspace } from "./context";
@@ -44,21 +39,11 @@ import { LibraryPage } from "./Library";
 import { DiagnosticsPage } from "./DiagnosticsPage";
 import { sceneArt, serverArt } from "./scene-art";
 import { useTranslation, locale } from "./i18n";
-
-const tabs = [
-  ["overview", "Overview", Activity],
-  ["console", "Console", Terminal],
-  ["files", "Files", Files],
-  ["packages", "Packages", Puzzle],
-  ["backups", "Backups", Archive],
-  ["automations", "Automations", Workflow],
-  ["diagnostics", "Diagnostics", ShieldCheck],
-  ["settings", "Settings", Settings],
-] as const;
+import { ServerSections } from "./ServerSections";
 
 export default function ServerPage({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { revision, navigate, runAction, assistant, can } = useWorkspace();
+  const { revision, runAction, assistant, can } = useWorkspace();
   const result = useApi<GameServer>(`/api/servers/${id}`, 5000, revision);
   const tab = window.location.hash.split("/")[3] || "overview";
   if (!result.data)
@@ -128,134 +113,122 @@ export default function ServerPage({ id }: { id: string }) {
           </Button>
         </div>
       </div>
-      <div className="tabs" role="tablist" aria-label={t("Server sections")}>
-        {tabs.map(([key, label, Icon]) => (
-          <button
-            key={key}
-            role="tab"
-            aria-selected={tab === key}
-            className={tab === key ? "active" : ""}
-            onClick={() => navigate(`/servers/${id}/${key}`)}
-          >
-            <Icon size={13} />
-            {t(
-              key === "packages"
-                ? ["fabric", "forge", "neoforge", "quilt"].includes(
-                    server.template,
-                  )
-                  ? "Mods"
-                  : server.template === "arclight"
-                    ? "Mods & plugins"
-                    : "Plugins"
-                : label,
-            )}
-          </button>
-        ))}
-      </div>
-      <ErrorBox error={result.error || server.snapshot.error} />
-      {tab === "overview" && (
-        <>
-          <section className="stat-grid">
-            {(
-              [
+      <ServerSections id={id} template={server.template} tab={tab} />
+      <div
+        id="server-content"
+        role="tabpanel"
+        aria-labelledby={`server-tab-${tab}`}
+      >
+        <ErrorBox error={result.error || server.snapshot.error} />
+        {tab === "overview" && (
+          <>
+            <section className="stat-grid">
+              {(
                 [
-                  Users,
-                  "Players online",
-                  server.snapshot.players
-                    ? String(server.snapshot.players.online)
-                    : "—",
-                  t("/ {{count}} slots", { count: server.max_players }),
-                ],
-                [
-                  Cpu,
-                  "CPU use",
-                  `${server.snapshot.cpu_percent.toLocaleString(locale(), { maximumFractionDigits: 1 })}%`,
-                  t("{{count}} cores available", { count: server.cpu_limit }),
-                ],
-                [
-                  HardDrive,
-                  "Memory",
-                  bytes(server.snapshot.memory_bytes),
-                  t("{{amount}} GiB limit", {
-                    amount: server.memory_mb / 1024,
-                  }),
-                ],
-                [
-                  Archive,
-                  "Disk use",
-                  bytes(server.snapshot.disk_bytes),
-                  t("{{amount}} GiB budget", { amount: server.disk_mb / 1024 }),
-                ],
-              ] as const
-            ).map(([Icon, label, value, foot]) => {
-              return (
-                <div className="stat-card" key={label}>
-                  <div className="stat-label">
-                    {t(label)}
-                    <Icon size={16} />
+                  [
+                    Users,
+                    "Players online",
+                    server.snapshot.players
+                      ? String(server.snapshot.players.online)
+                      : "—",
+                    t("/ {{count}} slots", { count: server.max_players }),
+                  ],
+                  [
+                    Cpu,
+                    "CPU use",
+                    `${server.snapshot.cpu_percent.toLocaleString(locale(), { maximumFractionDigits: 1 })}%`,
+                    t("{{count}} cores available", { count: server.cpu_limit }),
+                  ],
+                  [
+                    HardDrive,
+                    "Memory",
+                    bytes(server.snapshot.memory_bytes),
+                    t("{{amount}} GiB limit", {
+                      amount: server.memory_mb / 1024,
+                    }),
+                  ],
+                  [
+                    Archive,
+                    "Disk use",
+                    bytes(server.snapshot.disk_bytes),
+                    t("{{amount}} GiB budget", {
+                      amount: server.disk_mb / 1024,
+                    }),
+                  ],
+                ] as const
+              ).map(([Icon, label, value, foot]) => {
+                return (
+                  <div className="stat-card" key={label}>
+                    <div className="stat-label">
+                      {t(label)}
+                      <Icon size={16} />
+                    </div>
+                    <div className="stat-number">{value}</div>
+                    <div className="stat-foot">{foot}</div>
                   </div>
-                  <div className="stat-number">{value}</div>
-                  <div className="stat-foot">{foot}</div>
-                </div>
-              );
-            })}
-          </section>
-          <div className="server-detail-grid">
-            <section className="panel">
-              <header className="panel-heading">
-                <div>
-                  <h2>{t("CPU over time")}</h2>
-                  <p>{t("100% represents one fully utilized core.")}</p>
-                </div>
-                <Cpu size={17} className="muted" />
-              </header>
-              <Chart
-                points={server.history.map((m) => ({ at: m.at, value: m.cpu }))}
-                unit="% CPU"
-                height={250}
-              />
+                );
+              })}
             </section>
-            <section className="panel settings-card">
-              <h2>{t("A place to call home.")}</h2>
-              <p style={{ marginBottom: 17 }}>
-                {server.snapshot.motd.replace(/§[0-9a-fk-or]/gi, "")}
-              </p>
-              <div className="credential">
-                <span>{t("Core")}</span>
-                <code>
-                  {pretty(server.template)} · {server.version}
-                </code>
-              </div>
-              <div className="credential">
-                <span>{t("Runtime")}</span>
-                <code>Java {server.java || t("auto-selected")}</code>
-              </div>
-              <div className="credential">
-                <span>{t("Environment")}</span>
-                <code>{t("Docker · isolated network")}</code>
-              </div>
-              <Button
-                variant="ghost"
-                style={{ marginTop: 12 }}
-                onClick={() => assistant(id)}
-              >
-                {t("Ask Ember about this server")}
-                <ArrowUpRight size={14} />
-              </Button>
-            </section>
-          </div>
-          <div style={{ marginTop: 22 }}>
-            <Console server={server} preview />
-          </div>
-        </>
-      )}
-      {tab === "console" && <Console server={server} />}
-      {tab === "files" && <FilesPage server={server} />}
-      {tab === "packages" && <Packages server={server} />}
-      {tab === "backups" && <BackupsPage server={server} />}
-      {tab === "automations" && <AutomationsPage server={server} />}
-      {tab === "diagnostics" && <DiagnosticsPage server={server} />}
-      {tab === "settings" && <ServerSettings server={server} />}
+            <div className="server-detail-grid">
+              <section className="panel">
+                <header className="panel-heading">
+                  <div>
+                    <h2>{t("CPU over time")}</h2>
+                    <p>{t("100% represents one fully utilized core.")}</p>
+                  </div>
+                  <Cpu size={17} className="muted" />
+                </header>
+                <Chart
+                  points={server.history.map((m) => ({
+                    at: m.at,
+                    value: m.cpu,
+                  }))}
+                  unit="% CPU"
+                  height={250}
+                />
+              </section>
+              <section className="panel settings-card">
+                <h2>{t("A place to call home.")}</h2>
+                <p style={{ marginBottom: 17 }}>
+                  {server.snapshot.motd.replace(/§[0-9a-fk-or]/gi, "")}
+                </p>
+                <div className="credential">
+                  <span>{t("Core")}</span>
+                  <code>
+                    {pretty(server.template)} · {server.version}
+                  </code>
+                </div>
+                <div className="credential">
+                  <span>{t("Runtime")}</span>
+                  <code>Java {server.java || t("auto-selected")}</code>
+                </div>
+                <div className="credential">
+                  <span>{t("Environment")}</span>
+                  <code>{t("Docker · isolated network")}</code>
+                </div>
+                <Button
+                  variant="ghost"
+                  style={{ marginTop: 12 }}
+                  onClick={() => assistant(id)}
+                >
+                  {t("Ask Ember about this server")}
+                  <ArrowUpRight size={14} />
+                </Button>
+              </section>
+            </div>
+            <div style={{ marginTop: 22 }}>
+              <Console server={server} preview />
+            </div>
+          </>
+        )}
+        {tab === "console" && <Console server={server} />}
+        {tab === "files" && <FilesPage server={server} />}
+        {tab === "packages" && <Packages server={server} />}
+        {tab === "backups" && <BackupsPage server={server} />}
+        {tab === "automations" && <AutomationsPage server={server} />}
+        {tab === "diagnostics" && <DiagnosticsPage server={server} />}
+        {tab === "settings" && <ServerSettings server={server} />}
+      </div>
     </>
   );
 }
@@ -458,7 +431,7 @@ function Packages({ server }: { server: GameServer }) {
         <Loading />
       ) : packages.data?.packages.length ? (
         <div className="panel table-wrap">
-          <table className="data-table">
+          <table className="data-table mobile-cards">
             <thead>
               <tr>
                 <th>{t("Package")}</th>
@@ -480,12 +453,12 @@ function Packages({ server }: { server: GameServer }) {
                       <small>SHA-256 · {p.metadata.sha256.slice(0, 16)}</small>
                     )}
                   </td>
-                  <td>
+                  <td data-label={t("Type")}>
                     <span className="tag">{t(p.kind)}</span>
                   </td>
-                  <td>{p.source}</td>
-                  <td>{bytes(p.size)}</td>
-                  <td>
+                  <td data-label={t("Source")}>{p.source}</td>
+                  <td data-label={t("Size")}>{bytes(p.size)}</td>
+                  <td data-label={t("Enabled")}>
                     <button
                       className={`switch ${p.enabled ? "on" : ""}`}
                       role="switch"

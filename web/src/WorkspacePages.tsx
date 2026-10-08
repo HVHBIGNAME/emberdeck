@@ -400,7 +400,7 @@ export function AccessPage() {
         <Loading />
       ) : tokens.data?.tokens.length ? (
         <div className="panel table-wrap">
-          <table className="data-table">
+          <table className="data-table mobile-cards">
             <thead>
               <tr>
                 <th>{t("Token")}</th>
@@ -422,10 +422,10 @@ export function AccessPage() {
                       {t("Created {{date}}", { date: date(token.created_at) })}
                     </small>
                   </td>
-                  <td>
+                  <td data-label={t("Role")}>
                     <span className="tag">{t(token.role)}</span>
                   </td>
-                  <td>
+                  <td data-label={t("Server scope")}>
                     {token.server_ids
                       .map((id) =>
                         id === "*"
@@ -434,7 +434,7 @@ export function AccessPage() {
                       )
                       .join(", ")}
                   </td>
-                  <td>
+                  <td data-label={t("Expires")}>
                     {token.expires_at
                       ? date(token.expires_at)
                       : t("No expiration")}

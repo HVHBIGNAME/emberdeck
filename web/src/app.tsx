@@ -7,8 +7,6 @@ import {
   ChevronRight,
   Command,
   ExternalLink,
-  LogOut,
-  Menu,
   Plus,
   Search,
   Server,
@@ -16,7 +14,7 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { ApiError, demo, hostedDemo, post, useApi } from "./api";
+import { ApiError, demo, post, useApi } from "./api";
 import type { Identity, Overview } from "./types";
 import { WorkspaceContext, type Workspace } from "./context";
 import { Button, ErrorBox, Loading, Logo, Modal } from "./ui";
@@ -33,13 +31,10 @@ import { SettingsPage } from "./SettingsPage";
 import { PageTransition } from "./Motion";
 import { usePreferences } from "./Preferences";
 import { messageText, useTranslation } from "./i18n";
-import {
-  mainLinks,
-  workspaceLinks,
-  NavigationGroup,
-  useNavigationDrawer,
-} from "./Navigation";
+import { mainLinks, workspaceLinks, NavigationGroup } from "./Navigation";
 import { JobDock } from "./JobDock";
+import { MobileNavigation } from "./MobileNavigation";
+import { WorkspaceProfile } from "./WorkspaceProfile";
 
 export default function App({
   onReady,
@@ -69,12 +64,8 @@ export default function App({
     error: boolean;
   } | null>(null);
   const [jobServer, setJobServer] = useState<string | null>(null);
-  const [mobile, setMobile] = useState(false);
-  const closeNavigation = useCallback(() => setMobile(false), []);
-  const drawer = useNavigationDrawer(mobile, closeNavigation);
   const navigate = useCallback((path: string) => {
     window.location.hash = path;
-    setMobile(false);
   }, []);
   const notify = useCallback(
     (message: string, error = false) => setToast({ message, error }),
@@ -105,8 +96,16 @@ export default function App({
     onReady,
   ]);
   useEffect(() => {
-    const listener = () =>
-      setRoute(window.location.hash.slice(1) || "/overview");
+    const listener = (event: HashChangeEvent) => {
+      const next = window.location.hash.slice(1) || "/overview";
+      const previous = new URL(event.oldURL).hash.slice(1) || "/overview";
+      setRoute(next);
+      if (
+        previous.split("/").slice(0, 3).join("/") !==
+        next.split("/").slice(0, 3).join("/")
+      )
+        window.scrollTo(0, 0);
+    };
     window.addEventListener("hashchange", listener);
     return () => window.removeEventListener("hashchange", listener);
   }, []);
@@ -120,7 +119,6 @@ export default function App({
     const listener = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        setMobile(false);
         setShowSearch((value) => !value);
       }
     };
@@ -231,11 +229,7 @@ export default function App({
   return (
     <WorkspaceContext.Provider value={workspace}>
       <div className="app-shell">
-        <aside
-          ref={drawer.ref}
-          className={`sidebar ${mobile ? "mobile-open" : ""}`}
-          inert={drawer.narrow && !mobile}
-        >
+        <aside className="sidebar">
           <a
             href="#/overview"
             className="brand-link"
@@ -259,7 +253,6 @@ export default function App({
             page={page}
             count={workspace.servers.length}
             label="CONTROL ROOM"
-            onNavigate={closeNavigation}
           />
           <div className="nav-section-label second">{t("WORKSPACE")}</div>
           <NavigationGroup
@@ -272,14 +265,12 @@ export default function App({
             page={page}
             count={workspace.servers.length}
             label="WORKSPACE"
-            onNavigate={closeNavigation}
           />
           <div className="sidebar-bottom">
             <button
               className="ember-nav"
               onClick={() => {
                 workspace.assistant(selectedServer?.id);
-                closeNavigation();
               }}
             >
               <Sparkles size={17} />
@@ -300,72 +291,11 @@ export default function App({
               <span className="dot green" />v{identity.data.version}
               <span>{t("RUST NATIVE")}</span>
             </div>
-            <div className="profile">
-              <span className="avatar">
-                {identity.data.user.name.slice(0, 2).toUpperCase()}
-              </span>
-              <div>
-                <strong>
-                  {identity.data.user.id === "owner"
-                    ? t("Owner")
-                    : identity.data.user.name}
-                </strong>
-                <span>
-                  {demo
-                    ? t("Read-only demo")
-                    : t("{{role}} access", {
-                        role: t(
-                          identity.data.user.role.charAt(0).toUpperCase() +
-                            identity.data.user.role.slice(1),
-                        ),
-                      })}
-                </span>
-              </div>
-              {demo ? (
-                <a
-                  href={
-                    hostedDemo ? "https://github.com/HVHBIGNAME/emberdeck" : "/"
-                  }
-                  className="icon-button"
-                  aria-label={t("Leave demo")}
-                >
-                  <LogOut size={16} />
-                </a>
-              ) : (
-                <button
-                  className="icon-button"
-                  aria-label={t("Sign out")}
-                  onClick={async () => {
-                    try {
-                      await post("/api/auth/logout", {});
-                      window.location.assign("/");
-                    } catch (error) {
-                      notify(String(error), true);
-                    }
-                  }}
-                >
-                  <LogOut size={16} />
-                </button>
-              )}
-            </div>
+            <WorkspaceProfile />
           </div>
         </aside>
-        {mobile && (
-          <button
-            className="sidebar-scrim"
-            aria-label={t("Close navigation")}
-            onClick={() => setMobile(false)}
-          />
-        )}
-        <div className="main-shell" inert={drawer.narrow && mobile}>
+        <div className="main-shell">
           <header className="topbar">
-            <button
-              className="icon-button mobile-toggle"
-              onClick={() => setMobile(true)}
-              aria-label={t("Open navigation")}
-            >
-              <Menu size={20} />
-            </button>
             <div className="breadcrumb">
               <Box size={15} />
               <span>{t("My workspace")}</span>
@@ -392,6 +322,13 @@ export default function App({
                 </kbd>
               </button>
               <button
+                className="icon-button mobile-assistant"
+                aria-label={t("Ask Ember")}
+                onClick={() => workspace.assistant(selectedServer?.id)}
+              >
+                <Sparkles size={20} />
+              </button>
+              <button
                 className="icon-button topbar-preferences"
                 aria-label={t("Personal preferences")}
                 onClick={() => navigate("/settings")}
@@ -401,6 +338,7 @@ export default function App({
               {workspace.can("admin") && (
                 <Button
                   variant="primary"
+                  className="topbar-create"
                   aria-label={t("New server")}
                   onClick={() => workspace.newServer()}
                 >
@@ -419,7 +357,13 @@ export default function App({
               <Loading />
             ) : (
               <AnimatePresence mode="wait">
-                <PageTransition key={route}>
+                <PageTransition
+                  key={
+                    page === "servers"
+                      ? route.split("/").slice(0, 3).join("/")
+                      : route
+                  }
+                >
                   {page === "overview" && overview.data && (
                     <Dashboard overview={overview.data} />
                   )}
@@ -514,6 +458,7 @@ export default function App({
             </footer>
           </main>
         </div>
+        <MobileNavigation page={page} route={route} />
         <AnimatePresence>
           {newTemplate && (
             <NewServer

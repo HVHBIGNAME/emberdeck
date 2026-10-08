@@ -211,6 +211,24 @@ function AppearanceSettings() {
           </small>
         </label>
       </div>
+      <div className="transparency-settings">
+        <Slider
+          label={t("Panel transparency")}
+          value={preferences.panelTransparency}
+          valueLabel={`${preferences.panelTransparency}%`}
+          onValueChange={(panelTransparency) => update({ panelTransparency })}
+          min={0}
+          max={85}
+          step={5}
+          minLabel={t("Opaque")}
+          maxLabel={t("Transparent")}
+        />
+        <p className="preference-note">
+          {t(
+            "Let the background show through cards, the sidebar and the top bar. Text and controls stay solid.",
+          )}
+        </p>
+      </div>
     </section>
   );
 }

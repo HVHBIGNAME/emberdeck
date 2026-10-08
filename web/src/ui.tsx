@@ -9,7 +9,7 @@ import {
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, useIsPresent } from "motion/react";
 import { AlertCircle, Check, Copy, LoaderCircle, X } from "lucide-react";
-import { publicFile } from "./assets";
+import { brandPath } from "./branding";
 import { usePreferences } from "./Preferences";
 import i18n, { locale, messageText, useTranslation } from "./i18n";
 export { Select } from "./Select";
@@ -18,7 +18,15 @@ export { AnimatePresence } from "motion/react";
 export function Logo({ small = false }: { small?: boolean }) {
   return (
     <span className={`logo ${small ? "small" : ""}`}>
-      <img src={publicFile("mark.svg")} alt="" />
+      <svg
+        className="brand-mark"
+        viewBox="0 0 40 40"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect width="40" height="40" rx="11" fill="var(--accent-fill)" />
+        <path d={brandPath} fill="var(--accent-ink)" />
+      </svg>
       {!small && (
         <span>
           emberdeck<span className="logo-dot">.</span>
@@ -55,6 +63,7 @@ export function Modal({
   onClose,
   wide = false,
   initialFocus,
+  className = "",
 }: {
   title: string;
   subtitle?: string;
@@ -62,6 +71,7 @@ export function Modal({
   onClose: () => void;
   wide?: boolean;
   initialFocus?: string;
+  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const returnFocus = useRef(
@@ -112,7 +122,7 @@ export function Modal({
             >
               <motion.div
                 ref={ref}
-                className={`modal ${wide ? "wide" : ""}`}
+                className={`modal ${wide ? "wide" : ""} ${className}`}
                 initial={animated ? { opacity: 0, y: 24, scale: 0.97 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{

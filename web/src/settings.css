@@ -33,6 +33,9 @@
 .preference-panel {
   padding: 1.65rem;
 }
+.transparency-settings {
+  margin-top: 1.5rem;
+}
 .preference-panel > h2 {
   display: flex;
   gap: 0.65rem;

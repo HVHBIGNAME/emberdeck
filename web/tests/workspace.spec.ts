@@ -196,10 +196,10 @@ test("mobile layout stays within the viewport and navigation works", async ({
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page.getByRole("button", { name: "Open navigation" }).click();
   await page.getByRole("link", { name: "Library", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "A world of possibilities." }),
   ).toBeVisible();
-  await expect(page.locator(".sidebar")).not.toHaveClass(/mobile-open/);
+  await expect(page.locator(".sidebar")).toBeHidden();
+  await expect(page.locator(".mobile-dock")).toBeVisible();
 });

@@ -130,7 +130,7 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
         <Loading />
       ) : backups.data?.backups.length ? (
         <section className="panel table-wrap">
-          <table className="data-table">
+          <table className="data-table mobile-cards">
             <thead>
               <tr>
                 <th>{t("Archive")}</th>
@@ -150,7 +150,7 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                     </span>
                     <small>{date(backup.created_at)}</small>
                   </td>
-                  <td>
+                  <td data-label={t("Destination")}>
                     <span className="file-name">
                       {backup.destination === "local" ? (
                         <HardDrive size={13} />
@@ -163,8 +163,8 @@ export function BackupsPage({ server: fixedServer }: { server?: GameServer }) {
                     </span>
                     <small>{t(backup.remote_state)}</small>
                   </td>
-                  <td>{bytes(backup.size)}</td>
-                  <td>
+                  <td data-label={t("Size")}>{bytes(backup.size)}</td>
+                  <td data-label={t("Integrity")}>
                     <span className="tag" title={backup.sha256}>
                       SHA-256 · {backup.sha256.slice(0, 8)}
                     </span>

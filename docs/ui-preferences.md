@@ -1,6 +1,14 @@
 # Personal preferences
 
-Open **Settings** in the sidebar or use the sliders button in the top bar. The sign-in screen also has a settings link. These controls work in the read-only demo.
+Open **Settings** in the sidebar on desktop or in the bottom dock on mobile. Desktop also has a sliders button in the top bar. The sign-in screen has a settings link. These controls work in the read-only demo.
+
+## Mobile navigation
+
+At widths up to 1000px, the bottom dock provides **Overview**, **Servers**, **Library**, **Settings** and **More**. More opens a bottom sheet with blueprints, automations, backups, activity, documentation and account actions; administrators also see nodes and access tokens. The compact top bar contains search, **Ask Ember** and an administrator-only **+** button for creating a server.
+
+Server pages keep **Overview**, **Console** and **Files** one tap away. The fourth control opens additional sections and displays the active section when one is selected. Desktop retains the full tab strip. Arrow keys move focus between tabs; Enter activates a tab. Switching server sections preserves the server header, while changing workspace pages returns to the top.
+
+On narrow screens, file, package, backup and access-token tables become labeled cards with visible actions. Toolbars and filters wrap, the console scrolls within its own area, and navigation respects device safe areas. Bottom padding keeps the last content and notifications clear of the dock.
 
 ## Appearance
 
@@ -18,6 +26,10 @@ Manrope headings and Golos Text body text include Cyrillic and are served from t
 [Font licenses](../web/public/font-licenses.txt) are bundled with the interface and available at `/font-licenses.txt` on a native panel.
 
 Interface text, dates, number formatting, built-in blueprint descriptions and diagnostic guidance are localized. Server names, console output, file contents and third-party package descriptions retain their original content.
+
+The logo mark and browser favicon follow the selected accent and light/dark theme. This also applies to the opening screen, sign-in and installation pages. Changes persist across reloads and synchronize between tabs; system-theme changes update both icons automatically.
+
+**Panel transparency** ranges from **0 to 85%** in steps of 5%, starting at 0%. Increase it to reveal more of the background through server cards, statistics, panels, the sidebar and the top bar. Text, form controls and popup menus keep their original opacity. The setting works in both themes, applies immediately and is restored before the app starts on reload. It is independent of background intensity and is included in **Reset appearance**.
 
 ## Motion and input
 

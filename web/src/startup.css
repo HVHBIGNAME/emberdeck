@@ -19,7 +19,7 @@
 .startup-brand .logo {
   gap: 0.8rem;
 }
-.startup-brand .logo img {
+.startup-brand .logo .brand-mark {
   width: 2.7rem;
   height: 2.7rem;
 }

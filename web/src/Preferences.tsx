@@ -11,6 +11,7 @@ import {
 import { MotionConfig } from "motion/react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
+import { updateFavicon } from "./branding";
 import {
   backgroundKey,
   defaultPreferences,
@@ -79,6 +80,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     root.dataset.density = preferences.density;
     root.lang = preferences.language;
     root.style.colorScheme = theme;
+    root.style.setProperty(
+      "--surface-opacity",
+      String(1 - preferences.panelTransparency / 100),
+    );
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", theme === "dark" ? "#101417" : "#f1f2ef");
@@ -92,6 +97,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       );
     }
   }, [preferences, motion, systemDark]);
+
+  useEffect(updateFavicon, [preferences.accent, preferences.theme, systemDark]);
 
   useEffect(() => {
     const readImage = () => {

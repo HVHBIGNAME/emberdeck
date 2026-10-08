@@ -15,6 +15,12 @@
       : "light";
   root.dataset.theme = theme;
   root.style.colorScheme = theme;
+  var transparency =
+    typeof saved.panelTransparency === "number" &&
+    Number.isFinite(saved.panelTransparency)
+      ? Math.max(0, Math.min(85, saved.panelTransparency))
+      : 0;
+  root.style.setProperty("--surface-opacity", String(1 - transparency / 100));
   root.dataset.accent = ["ember", "moss", "diamond", "amethyst"].includes(
     saved.accent,
   )

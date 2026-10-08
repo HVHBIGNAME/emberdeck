@@ -11,6 +11,7 @@ import "./design-tokens.css";
 import "./design-layout.css";
 import "./design-controls.css";
 import "./design-effects.css";
+import "./mobile.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

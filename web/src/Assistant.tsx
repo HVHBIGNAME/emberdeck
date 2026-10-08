@@ -174,6 +174,7 @@ export function Assistant({
           />
           <Button
             variant="primary"
+            aria-label={t("Ask Ember")}
             busy={busy}
             disabled={
               !configured || !id || !prompt.trim() || !can("assistant.use", id)
@@ -181,7 +182,7 @@ export function Assistant({
             type="submit"
           >
             <Send size={14} />
-            {t("Ask Ember")}
+            <span>{t("Ask Ember")}</span>
           </Button>
         </form>
       </div>
